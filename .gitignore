@@ -1,0 +1,13 @@
+__pycache__/
+all_plots_final/
+all_results/
+all_trained_models/
+data/
+latex/
+microarray_data_prepared/
+microarray_data_raw/
+playground/
+synthetic_data/
+readme_private.txt
+transfer_results.sh
+.DS_Store
