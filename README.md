@@ -19,8 +19,6 @@ mkdir synthetic_data && mkdir all_results && mkdir all_trained_models && mkdir d
 
 ## Usage (Basic Example Workflow)
 
-Example using Friedman (n=100) dataset with 10% outliers.
-
 -------------------------------------------
 1. Prepare Data
 -------------------------------------------
@@ -58,8 +56,8 @@ See comments in "show_table.py" for details.
 
 The main arguments are as follows:
 - *target* = specify model (target distribution); possible choices are {**MultivariateStudentT**, **Funnel**, **MultivariateNormalMixture**, **ConjugateLinearRegression**, **HorseshoePriorLogisticRegression**}.
-- *d* = specifies dimension of data used by **ConjugateLinearRegression** and **HorseshoePriorLogisticRegression**. 
-- *D* = specifies dimension of model used by **MultivariateStudentT**, **Funnel**, and **MultivariateNormalMixture**
+- *d* = specifies dimension of data used by **ConjugateLinearRegression** and **HorseshoePriorLogisticRegression**; possible choices are {**10**, **100**, **1000**}.
+- *D* = specifies dimension of model used by **MultivariateStudentT**, **Funnel**, and **MultivariateNormalMixture**; possible choices are {**10**, **100**, **1000**}.
 - *flow-type* = set **RealNVP_small** for normalizing flow and **GaussianOnly** for Gaussian mean field VI.
 - *method* = specifies variant of RealNVP; possible  choices are {**standard**, **SymClip**, **ATAF**, **proposed** (proposed with Gaussian base distribution), **proposed_withStudentT** (proposed with student-t base distribution), **no_loft_proposed** (proposed with Gaussian base distribution, but no LOFT), **no_loft_proposed_withStudentT** (proposed with student-t base distribution, but no LOFT)}.
 
