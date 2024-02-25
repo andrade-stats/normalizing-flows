@@ -63,17 +63,17 @@ The main arguments are as follows:
 - *flow-type* = set **RealNVP_small** for normalizing flow and **GaussianOnly** for Gaussian mean field VI.
 - *method* = specifies variant of RealNVP; possible  choices are {**standard**, **SymClip**, **ATAF**, **proposed** (proposed with Gaussian base distribution), **proposed_withStudentT** (proposed with student-t base distribution), **no_loft_proposed** (proposed with Gaussian base distribution, but no LOFT), **no_loft_proposed_withStudentT** (proposed with student-t base distribution, but no LOFT)}.
 
-Example training mean field VI on MultivariateStudentT with 1000 dimensions:
+Example (1):  Training mean field VI on MultivariateStudentT with 1000 dimensions:
 ```bash
 python run_experiments.py --target=MultivariateStudentT --D=1000 --flow-type=GaussianOnly
 ``` 
 
-Example training proposed method (with student-t base distribution) on HorseshoePriorLogisticRegression with 1000 dimensional data (total model dimension is 4002):
+Example (2): Training proposed method (with student-t base distribution) on HorseshoePriorLogisticRegression with 1000 dimensional data (total model dimension is 4002):
 ```bash
 python run_experiments.py --target=HorseshoePriorLogisticRegression --d=1000 --flow-type=RealNVP_small --method=proposed_withStudentT
 ``` 
 
-Example training standard method on ConjugateLinearRegression with 1000 dimensional data (total model dimension is 1001):
+Example (3): Training standard method on ConjugateLinearRegression with 1000 dimensional data (total model dimension is 1001):
 ```bash
 python run_experiments.py --target=ConjugateLinearRegression --d=1000 --flow-type=RealNVP_small --method=standard
 ``` 
