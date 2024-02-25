@@ -47,14 +47,18 @@ The trained model is saved into folder "all_trained_models/."
 -------------------------------------------
 3. Show summary of all results
 -------------------------------------------
-See comments in "show_table.py" for details
 
 ```bash
 python show_table.py
 ``` 
 
+See comments in "show_table.py" for details.
 
 ## Details on command line arguments
+
+The main arguments are as follows:
+- target = specify model (target distribution), possible choices are {MultivariateStudentT, Funnel, MultivariateNormalMixture, ConjugateLinearRegression, HorseshoePriorLogisticRegression}
+- flow-type = set *RealNVP_small* for normalizing flow and GaussianOnly for Gaussian mean field VI 
 
 target specficies the model:
 HorseshoePriorLogisticRegression 
@@ -67,3 +71,8 @@ python runExperiments.py Friedman_n100 student focused None 0.1
 ## Details on source code
 
 More details needed here !!
+
+python run_experiments.py --target=MultivariateStudentT --D=1000 --flow-type=RealNVP_small --method=standard
+python run_experiments.py --target=Funnel --D=1000 --flow-type=RealNVP_small --method=standard
+python run_experiments.py --target=MultivariateNormalMixture --D=1000 --flow-type=RealNVP_small --method=standard
+python run_experiments.py --target=ConjugateLinearRegression --d=1000 --flow-type=RealNVP_small --method=standard
