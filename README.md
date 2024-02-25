@@ -57,8 +57,8 @@ See comments in "show_table.py" for details.
 ## Details on command line arguments
 
 The main arguments are as follows:
-- target = specify model (target distribution), possible choices are {MultivariateStudentT, Funnel, MultivariateNormalMixture, ConjugateLinearRegression, HorseshoePriorLogisticRegression}
-- flow-type = set *RealNVP_small* for normalizing flow and GaussianOnly for Gaussian mean field VI 
+- *target* = specify model (target distribution), possible choices are {**MultivariateStudentT**, **Funnel**, MultivariateNormalMixture, ConjugateLinearRegression, HorseshoePriorLogisticRegression}
+- *flow-type* = set **RealNVP_small** for normalizing flow and GaussianOnly for Gaussian mean field VI 
 
 target specficies the model:
 HorseshoePriorLogisticRegression 
