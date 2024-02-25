@@ -57,22 +57,23 @@ See comments in "show_table.py" for details.
 ## Details on command line arguments
 
 The main arguments are as follows:
-- *target* = specify model (target distribution), possible choices are {**MultivariateStudentT**, **Funnel**, MultivariateNormalMixture, ConjugateLinearRegression, HorseshoePriorLogisticRegression}
-- *flow-type* = set **RealNVP_small** for normalizing flow and GaussianOnly for Gaussian mean field VI 
+- *target* = specify model (target distribution); possible choices are {**MultivariateStudentT**, **Funnel**, **MultivariateNormalMixture**, **ConjugateLinearRegression**, **HorseshoePriorLogisticRegression**}.
+- *d* = specifies dimension of data used by **ConjugateLinearRegression** and **HorseshoePriorLogisticRegression**. 
+- *D* = specifies dimension of model used by **MultivariateStudentT**, **Funnel**, and **MultivariateNormalMixture**
+- *flow-type* = set **RealNVP_small** for normalizing flow and **GaussianOnly** for Gaussian mean field VI.
+- *method* = specifies variant of RealNVP; possible  choices are {**standard**, **SymClip**, **ATAF**, **proposed** (proposed with Gaussian base distribution), **proposed_withStudentT** (proposed with student-t base distribution), **no_loft_proposed** (proposed with Gaussian base distribution, but no LOFT), **no_loft_proposed_withStudentT** (proposed with student-t base distribution, but no LOFT)}.
 
-target specficies the model:
-HorseshoePriorLogisticRegression 
-
-Run student-t GP:
+Example training mean field VI on MultivariateStudentT with 1000 dimensions:
 ```bash
-python runExperiments.py Friedman_n100 student focused None 0.1
+python run_experiments.py --target=MultivariateStudentT --D=1000 --flow-type=GaussianOnly
 ``` 
 
-## Details on source code
+Example training proposed method (with student-t base distribution) on HorseshoePriorLogisticRegression with 1000 dimensional data (total model dimension is 4002):
+```bash
+python run_experiments.py --target=HorseshoePriorLogisticRegression --d=1000 --flow-type=RealNVP_small --method=proposed_withStudentT
+``` 
 
-More details needed here !!
-
-python run_experiments.py --target=MultivariateStudentT --D=1000 --flow-type=RealNVP_small --method=standard
-python run_experiments.py --target=Funnel --D=1000 --flow-type=RealNVP_small --method=standard
-python run_experiments.py --target=MultivariateNormalMixture --D=1000 --flow-type=RealNVP_small --method=standard
+Example training standard method on ConjugateLinearRegression with 1000 dimensional data (total model dimension is 1001):
+```bash
 python run_experiments.py --target=ConjugateLinearRegression --d=1000 --flow-type=RealNVP_small --method=standard
+``` 
