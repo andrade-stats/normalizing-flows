@@ -1,7 +1,7 @@
 
 # Stable Training of Normalizing Flows for High-dimensional Variational Inference
 
-Implementation of all normalizing flows experiments described in "Stable Training of Normalizing Flows for High-dimensional Variational Inference", 2024.
+Implementation of all normalizing flow experiments described in "Stable Training of Normalizing Flows for High-dimensional Variational Inference", 2024.
 
 
 ## Requirements
@@ -12,7 +12,23 @@ Implementation of all normalizing flows experiments described in "Stable Trainin
 
 ## Preparation
 
-Create folders for output using
+1. Create experiment environment using e.g. conda as follows
+```bash
+conda create -n test python=3.11
+conda activate test
+```
+
+2. Install basic packages:
+```bash
+pip3 install -U numpy scikit-learn GPUtil normflows tqdm matplotlib
+```
+
+3. Install PyTorch for your environment (see official webpage of [PyTorch](https://pytorch.org)).
+<!-- ```bash
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+``` -->
+
+4. Create folders for output using
 ```bash
 mkdir synthetic_data && mkdir all_results && mkdir all_trained_models && mkdir data && mkdir all_plots_final
 ```
