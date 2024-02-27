@@ -1,7 +1,7 @@
 
 # Stable Training of Normalizing Flows for High-dimensional Variational Inference
 
-Implementation of all normalizing flow experiments described in "Stable Training of Normalizing Flows for High-dimensional Variational Inference", 2024.
+Implementation of all normalizing flow experiments described in [Stable Training of Normalizing Flows for High-dimensional Variational Inference](https://arxiv.org/pdf/2402.16408.pdf), 2024 (under review).
 
 
 ## Requirements
