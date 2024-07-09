@@ -60,6 +60,10 @@ def getInfoStr_new(args, TARGET_NAME, DATA_DESCRIPTOR_STR, FLOW_TYPE, NUMBER_OF_
     if target_name_short == "MNM" or target_name_short == "STM":
         target_name_short += "_" + str(args.targetK) + "_" + str(args.targetMeanFac)
 
+    if target_name_short == "MST" or target_name_short == "F":
+        target_name_short += "_" + str(args.var)
+        print("target_name_short = ", target_name_short)
+     
     if FLOW_TYPE == "GaussianOnly":
         assert(CUSHION_TYPE is None)
         basic_info_str = target_name_short + "_" + DATA_DESCRIPTOR_STR + "_" + FLOW_TYPE +  "_" + str(MAX_ITERATION) + "_" + str(NUM_SAMPLES) + "_" + str(DIVERGENCE_FOR_OPTIMIZATION) + "_" + str(NR_MIXTURE_COMPONENTS)  + "_" + str(LEARN_MIXTURE_WEIGHTS)
@@ -163,6 +167,17 @@ def setGPU():
         print("USE GPU NR ", torch.cuda.current_device())
     else:
         print("USE CPU")
+
+        # if torch.backends.mps.is_available():
+        #     mps_device = torch.device("mps")
+        #     x = torch.ones(1, device=mps_device)
+        #     print (x)
+        #     print("MPS available")
+        # else:
+        #     print ("MPS device not found.")
+        
+        # # TRY TO SPECIFY MPS HERE
+        # assert(False)
 
     print("DATA_TYPE = ", DATA_TYPE)
 

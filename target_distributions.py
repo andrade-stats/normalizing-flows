@@ -20,7 +20,7 @@ class Funnel(Target):
     
     EPSILON = 10 ** -6 # to ensure strict positiveness
 
-    def __init__(self,dim = 10, scale = 3.0):
+    def __init__(self,dim = 10, scale = 3.0, var = None):
         super().__init__()
         self.scale = scale
         self.other_dim = dim - 1
@@ -162,13 +162,14 @@ class MultivariateNormalMixture(Target):
 # CHECKED
 class MultivariateStudentT(Target):
    
-    def __init__(self, dim, df = 1.0):
+    def __init__(self, dim, df = 1.0, var = 1.0):
         super().__init__()
         self.df = torch.tensor(df)
         self.dim = torch.tensor(dim)
         self.loc = 2.0 * torch.ones(dim)
-        self.cov = torch.ones((dim,dim))*0.8 + 0.2*torch.eye(dim)
-
+        self.cov = var * (torch.ones((dim,dim))*0.8 + 0.2*torch.eye(dim))
+        print("variance of MultivariateStudentT = ", var)
+        
         self.L = torch.linalg.cholesky(torch.inverse(self.cov))
 
         self.fixedTerms = torch.lgamma((self.df + self.dim)/2.0) \

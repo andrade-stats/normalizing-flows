@@ -27,12 +27,15 @@ def getAnnealingInterations(max_iterations):
 # for num_samples might try up to 2 ** 15
 def getArgumentParser(data = "no_data", n = None, d = None, foldId = None, D = None, target = None, flow_type = None, cushion_type = None, nr_cushions = None, 
                       nr_mixture_components = 1, divergence = "reverse_kld_without_score", num_samples = 2 ** 8,
-                      nr_flows = None, l2_strength = 0.0, l2_clip_norm = None, loft_t = 100.0, intercept = None, rho = None, max_iterations = None, no_act_norm = "no", init = "zeros", annealing="yes", lr_exp=5, learn_mixture_weights = "no", targetK = -1, targetMeanFac = -1.0, analyzing = None, data_type = "double", realNVP_threshold = None, realNVP_variation = None, realNVP_spec = None, redGradVarEst = None, opt = "Adam", scaleShiftLayer = None, trainable_base = "yes", use_student_base = "no"):
+                      nr_flows = None, l2_strength = 0.0, l2_clip_norm = None, loft_t = 100.0, intercept = None, rho = None, max_iterations = None, no_act_norm = "no", init = "zeros", annealing="yes", lr_exp=5, learn_mixture_weights = "no", targetK = -1, targetMeanFac = -1.0, analyzing = None, data_type = "double", realNVP_threshold = None, realNVP_variation = None, realNVP_spec = None, redGradVarEst = None, opt = "Adam", scaleShiftLayer = None, trainable_base = "yes", use_student_base = "no", var = 1.0):
     
     parser = argparse.ArgumentParser(description="NFM Experiments")
     
     parser.add_argument("--targetK", default=targetK, type=int)  
     parser.add_argument("--targetMeanFac", default=targetMeanFac, type=float)
+
+    # variance of MultivariateStudentT
+    parser.add_argument("--var", default=var, type=float)
 
     parser.add_argument("--data", default=data, type=str)
     parser.add_argument("--n", default=n, type=int)
@@ -78,6 +81,8 @@ def getArgumentParser(data = "no_data", n = None, d = None, foldId = None, D = N
     parser.add_argument('--trainable-base', default=trainable_base, type=str)
     parser.add_argument('--use-student-base', default=use_student_base, type=str)
 
+    parser.add_argument("--iteration-setting", default=None, type=str)
+    
     # only used for helper access
     parser.add_argument("--method", default=None, type=str)
     parser.add_argument("--flow-type", default=None, type=str)
@@ -167,7 +172,7 @@ def initialize_target_and_flow(args, initialize = True):
         target = target_constructor(dim = args.D, K = args.targetK, meanFac = args.targetMeanFac)
     else:
         assert(args.target == "Funnel" or args.target == "MultivariateStudentT")
-        target = target_constructor(dim = args.D)
+        target = target_constructor(dim = args.D, var = args.var)
                 
 
     if args.flow_type != "HMC" and args.flow_type != "smc":
@@ -221,7 +226,7 @@ def visualize(prob_target, D, q1 = None, q2 = None, savefigInfo = None):
     return
 
 
-def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, annealing = None, divergence = None, initialize = False):
+def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, annealing = None, divergence = None, var = None, iteration_setting = None, initialize = False):
     
     setting = {}
 
@@ -255,6 +260,8 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         assert(target_name == "Funnel" or target_name == "MultivariateStudentT")
         setting["target"] = target_name
         setting["D"] = D
+        setting["var"] = var
+        
 
 
     # *************** NFM parameters *************
@@ -316,26 +323,50 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
             setting["cushion_type"] = "none"
             setting["use_student_base"] = "yes" 
             setting["realNVP_variation"] = "tanh"
+        elif method == "SymClip_trainable_base":
+            setting["trainable_base"] = "yes"
+            setting["cushion_type"] = "none"
+            setting["realNVP_threshold"] = 0.1
+            setting["realNVP_variation"] = "var17"
         elif method == "SymClip":
             setting["trainable_base"] = "no"
             setting["cushion_type"] = "none"
             setting["realNVP_threshold"] = 0.1
             setting["realNVP_variation"] = "var17"
             setting["scaleShiftLayer"] = "ssL"
+        elif method == "AsymClip":
+            setting["trainable_base"] = "no"
+            setting["cushion_type"] = "none"
+            setting["realNVP_threshold"] = 0.1
+            setting["realNVP_variation"] = "var19"
+            setting["scaleShiftLayer"] = "ssL"
+        elif method == "AsymClip_Student":
+            setting["trainable_base"] = "no"
+            setting["cushion_type"] = "none"
+            setting["realNVP_threshold"] = 0.1
+            setting["realNVP_variation"] = "var19"
+            setting["scaleShiftLayer"] = "ssL"
+            setting["use_student_base"] = "yes"
         else:
            assert(False)
     
-    if ("data" in setting) and (setting["data"] == "colon"):
-        setting["max_iterations"] = 400000
+    assert((iteration_setting is None) or (iteration_setting == "short_try"))
+
+    if iteration_setting == "short_try":
+        setting["max_iterations"] = 10000
     else:
-        setting["max_iterations"] = 60000
+        if ("data" in setting) and (setting["data"] == "colon"):
+            setting["max_iterations"] = 400000
+        else:
+            setting["max_iterations"] = 60000
     
     if divergence is not None:
         assert(divergence == "reverse_kld")
         setting["divergence"] = divergence
         setting["max_iterations"] = int(1.5 * setting["max_iterations"])
         print("it = ", setting["max_iterations"])
-        # assert(False)
+        assert(False)
+
 
     args = getArgumentParser(**setting)
 
@@ -349,6 +380,8 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
 
 
 if __name__ == "__main__":
+
+    
 
     MANUALLY_SPECIFY_ALL_ARGUMENTS = False
 
@@ -382,9 +415,12 @@ if __name__ == "__main__":
         parser.add_argument("--nr-flows", default=64, type=int)
         parser.add_argument("--annealing", default=None, type=str)
         parser.add_argument("--divergence", default=None, type=str)
+        parser.add_argument("--var", default=1.0, type=float)
+        parser.add_argument("--iteration-setting", default=None, type=str)
+
         real_args = parser.parse_args()
 
-        target, flows_mixture, args = simple_init(real_args.target, max(real_args.D, real_args.d), real_args.flow_type, real_args.method, real_args.nr_flows, real_args.foldId, real_args.annealing, real_args.divergence, initialize = True)
+        target, flows_mixture, args = simple_init(real_args.target, max(real_args.D, real_args.d), real_args.flow_type, real_args.method, real_args.nr_flows, real_args.foldId, real_args.annealing, real_args.divergence, real_args.var, real_args.iteration_setting, initialize = True)
 
     anneal_iter = getAnnealingInterations(args.max_iterations)
     if args.max_iterations < 1000:
