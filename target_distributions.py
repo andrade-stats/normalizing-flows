@@ -9,6 +9,7 @@ from torch.distributions.half_cauchy import HalfCauchy
 from torch.distributions.cauchy import Cauchy
 from torch.distributions.normal import Normal
 from torch.distributions.bernoulli import Bernoulli
+from torch.distributions.exponential import Exponential
 
 import core_adjusted
 import scipy.stats
@@ -169,7 +170,7 @@ class MultivariateStudentT(Target):
         self.loc = 2.0 * torch.ones(dim)
         self.cov = var * (torch.ones((dim,dim))*0.8 + 0.2*torch.eye(dim))
         print("variance of MultivariateStudentT = ", var)
-        
+
         self.L = torch.linalg.cholesky(torch.inverse(self.cov))
 
         self.fixedTerms = torch.lgamma((self.df + self.dim)/2.0) \
@@ -378,6 +379,134 @@ class ConjugateLinearRegression(Target):
         assert(log_likelihood.shape == log_prior.shape)
         return log_prior + log_likelihood
     
+
+# The Bayesian Lasso as used in "Monte Carlo Approximation of Bayes Factors via Mixing With Surrogate Distributions", JASA, 2020
+class BayesianLasso(Target):
+
+    # checked
+    def __init__(self, X, y, true_beta = None, true_intercept = None):
+        super().__init__()
+        
+        self.X, self.y, self.true_beta, self.true_intercept = convert_data(X, y, true_beta, true_intercept)
+
+        self.d = self.X.shape[1]
+        self.n = self.X.shape[0]
+        
+        self.D = 2*self.d + 2
+        all_ids = torch.arange(self.D)
+        self.all_tau_squared_ids = all_ids[0:self.d]
+        self.sigma_squared_id = all_ids[self.d].reshape(-1)
+        self.beta_ids = all_ids[(self.d+1):(self.D - 1)]
+        self.intercept_id = all_ids[self.D - 1].reshape(-1)
+        
+        self.pos_contraint_ids = torch.cat((self.sigma_squared_id, self.all_tau_squared_ids))
+
+        self.true_log_marginal = torch.nan # unknown
+
+        self.lambda_hyper_param = 1.0
+
+        assert(self.all_tau_squared_ids.shape[0] == self.beta_ids.shape[0])
+        return
+    
+
+    def get_samples_from_approx(self, posterior_approximation_nfm, num_samples):
+        
+        with torch.no_grad():
+            z,log_q = posterior_approximation_nfm.sample(num_samples = num_samples)
+            z,log_q,_, _ = core_adjusted.filter_illegal_values_from_samples(z, log_q)
+            
+            assert(z.shape[0] >= 256) # Monte Carlo Samples
+            assert(z.shape[1] == self.d * 2 + 2)
+
+            beta = z[:, self.beta_ids]
+            intercept = z[:, self.intercept_id]
+
+            assert(beta.shape[0] >= 256) # Monte Carlo Samples
+            assert(beta.shape[1] == self.d) 
+            assert(intercept.shape[0] >= 256)
+            assert(intercept.shape[1] == 1) 
+
+            beta = beta.cpu().numpy()
+            intercept = intercept.cpu().numpy()
+            log_q = log_q.cpu().numpy()
+            log_p = self.log_prob(z).cpu().numpy()
+            
+        return beta, intercept, log_q, log_p
+
+
+    def get_pos_contraint_ids(self):        
+        return self.pos_contraint_ids
+
+    # checked
+    def log_prob(self, z):
+        # assert(z.shape[0] >= 256) # Monte Carlo Samples
+        assert(z.shape[1] == self.d * 2 + 2) 
+        assert(torch.sum(torch.isnan(z)) == 0)
+
+        beta = z[:, self.beta_ids]
+        intercept = z[:, self.intercept_id]
+
+        sigma_squared = z[:, self.sigma_squared_id]
+        all_tau_squared = z[:, self.all_tau_squared_ids]
+
+        # ***** prior *******
+        
+        diagonal_scales = torch.sqrt(all_tau_squared * sigma_squared)
+        assert(diagonal_scales.shape == beta.shape)
+        betas_prior_log_prob = Normal(loc = torch.zeros_like(beta), scale = diagonal_scales).log_prob(beta)
+        betas_prior_log_prob = torch.sum(betas_prior_log_prob, axis = 1)
+
+        intercept_prior_log_prob = Cauchy(loc = torch.zeros_like(intercept), scale = 10.0 * torch.ones_like(intercept)).log_prob(intercept)
+        sigma_squared_prior_log_prob = densities.get_log_prob_inv_gamma(sigma_squared, alpha = torch.tensor(0.5), beta = torch.tensor(0.5))
+        sigma_squared_prior_log_prob = torch.sum(sigma_squared_prior_log_prob, axis = 1)
+
+        tau_squared_prior_log_prob = Exponential(rate = (self.lambda_hyper_param ** 2) / 2.0).log_prob(all_tau_squared)        
+        tau_squared_prior_log_prob = torch.sum(tau_squared_prior_log_prob, axis = 1)
+
+        intercept_prior_log_prob = torch.sum(intercept_prior_log_prob, axis = 1)
+        
+        # print("**************")
+        # print("intercept_prior_log_prob.shape = ", intercept_prior_log_prob.shape)
+        # print("tau_squared_prior_log_prob.shape = ", tau_squared_prior_log_prob.shape)
+        # print("betas_prior_log_prob.shape = ", betas_prior_log_prob.shape)
+        # print("sigma_squared_prior_log_prob.shape = ", sigma_squared_prior_log_prob.shape)
+        # print("**************")
+
+        log_prior = betas_prior_log_prob + intercept_prior_log_prob + sigma_squared_prior_log_prob + tau_squared_prior_log_prob 
+
+        assert(torch.sum(torch.isnan(self.X)) == 0)
+        assert(torch.sum(torch.isnan(beta)) == 0)
+
+        assert(torch.all(torch.isfinite(sigma_squared)))
+        assert(torch.all(torch.isfinite(beta)))
+
+        mu = self.X @ beta.t() + intercept.reshape(1, -1)
+
+        # print("mu.shape = ", mu.shape)
+        y_broadcasted = torch.broadcast_to(self.y, mu.shape)
+
+        # print("y_broadcasted = ", y_broadcasted.shape)
+        # print("intercept.reshape(1, -1) = ", intercept.reshape(1, -1).shape)
+        # assert(False)
+
+        # print("sigma_squared = ", sigma_squared.shape)
+
+        sigma_broadcasted = torch.sqrt(sigma_squared)
+        sigma_broadcasted = sigma_broadcasted.reshape(1, -1)
+        sigma_broadcasted = torch.broadcast_to(sigma_broadcasted, mu.shape)
+
+        # print("sigma_broadcasted = ", sigma_broadcasted.shape)
+        # assert(False)
+
+        assert(torch.sum(torch.isnan(mu)) == 0)
+        log_likelihood_each_observation = torch.distributions.normal.Normal(loc = mu, scale = sigma_broadcasted).log_prob(y_broadcasted)
+        assert(log_likelihood_each_observation.shape[0] == self.X.shape[0]) 
+
+        log_likelihood = torch.sum(log_likelihood_each_observation, axis = 0)
+
+        assert(log_likelihood.shape[0] == z.shape[0])
+        assert(log_likelihood.shape == log_prior.shape)
+        return log_prior + log_likelihood
 
 
 # CHECKED

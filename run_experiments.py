@@ -156,7 +156,7 @@ def evaluate_marginal_likelihood(nfm):
 def initialize_target_and_flow(args, initialize = True):
     target_constructor = getattr(target_distributions, args.target)
 
-    if args.target.startswith("Conjugate") or args.target.startswith("Horseshoe"):
+    if args.target.startswith("Conjugate") or args.target.startswith("Horseshoe") or args.target.startswith("BayesianLasso"):
         assert(args.D is None)
 
         if args.foldId == -1:
@@ -251,6 +251,14 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         setting["data"] = "synthetic_regression"
         setting["target"] = "ConjugateLinearRegression"
         setting["foldId"] = foldId
+    elif target_name == "BayesianLasso":
+        setting["n"] = 100
+        setting["d"] = D
+        setting["rho"] = 0.5
+        setting["intercept"] = 0.0
+        setting["data"] = "synthetic_regression"
+        setting["target"] = "BayesianLasso"
+        setting["foldId"] = foldId
     elif target_name ==  "MultivariateNormalMixture":
         setting["target"] = "MultivariateNormalMixture"
         setting["targetK"] = 3
@@ -262,8 +270,7 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         setting["D"] = D
         setting["var"] = var
         
-
-
+    
     # *************** NFM parameters *************
     assert(flow_type is not None)
     setting["flow_type"] = flow_type
@@ -340,7 +347,7 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
             setting["realNVP_threshold"] = 0.1
             setting["realNVP_variation"] = "var19"
             setting["scaleShiftLayer"] = "ssL"
-        elif method == "AsymClip_Student":
+        elif method == "AsymClip_withStudentT":
             setting["trainable_base"] = "no"
             setting["cushion_type"] = "none"
             setting["realNVP_threshold"] = 0.1
@@ -366,7 +373,6 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         setting["max_iterations"] = int(1.5 * setting["max_iterations"])
         print("it = ", setting["max_iterations"])
         assert(False)
-
 
     args = getArgumentParser(**setting)
 

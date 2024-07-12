@@ -66,7 +66,7 @@ def convert_float_to_str(x):
         return str(x)
 
 
-def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "", filterInfValues = True, annealing = None, divergence = None, use_best_result = True):
+def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "", filterInfValues = True, annealing = None, divergence = None, use_best_result = True, iteration_setting = None, debug = False):
 
     # annealing, divergence, and use_best_result are used showing the results of the ablation test -> at most one should be specified
     assert(((annealing is None) and (divergence is None) and use_best_result) or  \
@@ -75,15 +75,24 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
         ((annealing is None) and (divergence is None) and (not use_best_result)))
 
     
-    if show == "time":
-         ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "proposed_withStudentT")]
-    elif full:
-        ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "no_loft_proposed"), ("RealNVP_small", "no_loft_proposed_withStudentT")]
+    if debug:
+        var = 1000.0
+        ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "AsymClip_withStudentT"), ("RealNVP_small", "AsymClip"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "SymClip_trainable_base")]
+        # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT")]
+        # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed_withStudentT")]
+        # ALL_METHODS = [("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed_withStudentT")]
     else:
-        ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT")]
+        var = None
+        
+        if show == "time":
+            ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "proposed_withStudentT")]
+        elif full:
+            ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "no_loft_proposed"), ("RealNVP_small", "no_loft_proposed_withStudentT")]
+        else:
+            ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT")]
 
 
-    if show == "IS" or show == "time":
+    if (not debug) and (show == "IS" or show == "time"):
         ALL_METHODS.append(("smc", 100000))
 
     if show == "WD" or show == "time":
@@ -126,7 +135,7 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
 
         for i, (flow_type, method) in enumerate(ALL_METHODS):
             
-            target, _, args = run_experiments.simple_init(target_name, D, flow_type, method, nr_flows, annealing = annealing_local, divergence = divergence_local)
+            target, _, args = run_experiments.simple_init(target_name, D, flow_type, method, nr_flows, annealing = annealing_local, divergence = divergence_local, var = var, iteration_setting = iteration_setting)
             # print("target.true_log_marginal = ", target.true_log_marginal)
 
             available = True
@@ -459,6 +468,8 @@ def showHorseshoeSynthetic(nr_flows, d = None):
     
     ALL_TARGET_NAMES = ["HorseshoePriorLogisticRegression"]
     
+    # showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "", filterInfValues = True, annealing = None, divergence = None, use_best_result = True, iteration_setting = None)
+
     all_elbo_table_v = []
     all_is_table_v = []
     for target_name in ALL_TARGET_NAMES:
@@ -482,9 +493,47 @@ def showHorseshoeSynthetic(nr_flows, d = None):
     print("*******************")
 
 
+def showNewExperiments(nr_flows, d = None):
+    
+    assert(nr_flows == 64 or nr_flows == 16)
+    assert(d is None or d == 2000)
+    
+    # iteration_setting = "short_try"
+    iteration_setting = None
+
+
+    ALL_TARGET_NAMES = ["MultivariateStudentT"]
+    # ALL_TARGET_NAMES = ["Funnel", "MultivariateStudentT", "MultivariateNormalMixture", "ConjugateLinearRegression"]
+    
+
+    all_elbo_table_v = []
+    all_is_table_v = []
+    for target_name in ALL_TARGET_NAMES:
+        elbo_table_h, elbo_table_v, _ = showTable(target_name = target_name, show = "ELBO", nr_flows = nr_flows, d = d, full = True, iteration_setting = iteration_setting, debug = True)
+        is_table_h, is_table_v, _ = showTable(target_name = target_name, show = "IS", nr_flows = nr_flows, d = d, full = True, iteration_setting = iteration_setting, debug = True)
+
+        all_elbo_table_v.append(elbo_table_v)
+        all_is_table_v.append(is_table_v)
+
+    print("NR_FLOWS = ", nr_flows)
+    all_ELBO_str = "\n".join(all_elbo_table_v)
+    print("******** ELBO and IS ***********")
+    print(all_ELBO_str)
+    # print("*******************")
+
+    # print("\midrule")
+
+    all_is_str = "\n".join(all_is_table_v)
+    # print("******** IS ***********")
+    print(all_is_str)
+    print("*******************")
+
+
 
 if __name__ == "__main__":
     
+    showNewExperiments(nr_flows = 64, d = 2000)
+
     # shows runtime results:
     # _, output_text_v, _ = showTable(target_name = "HorseshoePriorLogisticRegression", show = "time", d = 1000, nr_flows = 64)
     # print("********************************")
@@ -507,7 +556,7 @@ if __name__ == "__main__":
     # showStandardModels(nr_flows = 16, show = "ELBO_and_IS")
 
     # show results for horseshoe on synthetic data set:
-    showHorseshoeSynthetic(nr_flows = 64)
+    # showHorseshoeSynthetic(nr_flows = 64)
     # showHorseshoeSynthetic(nr_flows = 16)
     
     # show results for horseshoe on colon data set:
