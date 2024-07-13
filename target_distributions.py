@@ -15,12 +15,12 @@ import core_adjusted
 import scipy.stats
 import math
 
+EPSILON = 10 ** -6 # to ensure strict positiveness
+
 # CHECKED
 # Funnel Distribution as in "Slice sampling", Neal 2003
 class Funnel(Target):
     
-    EPSILON = 10 ** -6 # to ensure strict positiveness
-
     def __init__(self,dim = 10, scale = 3.0, var = None):
         super().__init__()
         self.scale = scale
@@ -38,7 +38,7 @@ class Funnel(Target):
         v = z[:,0]
         log_prob_v_each_sample = self.vdist.log_prob(v)
 
-        std_other = torch.sqrt(torch.exp(v)) + Funnel.EPSILON
+        std_other = torch.sqrt(torch.exp(v)) + EPSILON
         assert((std_other > 0.0).all())
 
         std_other = torch.broadcast_to(std_other, (z.shape[1] - 1, z.shape[0])).t()
@@ -58,7 +58,7 @@ class Funnel(Target):
     def getSamplesFromTruePosterior(self, num_samples):
         
         v = scipy.stats.norm(loc = 0.0, scale = self.scale).rvs(num_samples)
-        std_other = numpy.sqrt(numpy.exp(v)) + Funnel.EPSILON
+        std_other = numpy.sqrt(numpy.exp(v)) + EPSILON
         assert((std_other > 0.0).all())
 
         std_other = numpy.broadcast_to(std_other, (self.D - 1, num_samples)).transpose()
@@ -450,8 +450,7 @@ class BayesianLasso(Target):
         all_tau_squared = z[:, self.all_tau_squared_ids]
 
         # ***** prior *******
-        
-        diagonal_scales = torch.sqrt(all_tau_squared * sigma_squared)
+        diagonal_scales = torch.sqrt(all_tau_squared * sigma_squared) + EPSILON
         assert(diagonal_scales.shape == beta.shape)
         betas_prior_log_prob = Normal(loc = torch.zeros_like(beta), scale = diagonal_scales).log_prob(beta)
         betas_prior_log_prob = torch.sum(betas_prior_log_prob, axis = 1)
@@ -572,8 +571,6 @@ class HorseshoePriorLogisticRegression(Target):
         # assert(z.shape[0] >= 256) # Monte Carlo Samples
         assert(z.shape[1] == self.d * 2 + 2) 
         assert(torch.sum(torch.isnan(z)) == 0)
-
-        # EPSILON = 10 ** -6
 
         lambdas = z[:, self.lambdas_ids]
         tau = z[:, self.tau_id]

@@ -76,8 +76,10 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
 
     
     if debug:
-        var = 1000.0
-        ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "AsymClip_withStudentT"), ("RealNVP_small", "AsymClip"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "SymClip_trainable_base")]
+        var = None
+        # var = 1000.0
+        ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "proposed")]
+        # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "AsymClip_withStudentT"), ("RealNVP_small", "AsymClip"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "SymClip_trainable_base")]
         # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT")]
         # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed_withStudentT")]
         # ALL_METHODS = [("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed_withStudentT")]
@@ -496,13 +498,13 @@ def showHorseshoeSynthetic(nr_flows, d = None):
 def showNewExperiments(nr_flows, d = None):
     
     assert(nr_flows == 64 or nr_flows == 16)
-    assert(d is None or d == 2000)
+    assert(d is None or d == 1000)
     
     # iteration_setting = "short_try"
     iteration_setting = None
 
-
-    ALL_TARGET_NAMES = ["MultivariateStudentT"]
+    ALL_TARGET_NAMES = ["BayesianLasso"]
+    # ALL_TARGET_NAMES = ["MultivariateStudentT"]
     # ALL_TARGET_NAMES = ["Funnel", "MultivariateStudentT", "MultivariateNormalMixture", "ConjugateLinearRegression"]
     
 
@@ -532,7 +534,7 @@ def showNewExperiments(nr_flows, d = None):
 
 if __name__ == "__main__":
     
-    showNewExperiments(nr_flows = 64, d = 2000)
+    showNewExperiments(nr_flows = 64, d = 1000)
 
     # shows runtime results:
     # _, output_text_v, _ = showTable(target_name = "HorseshoePriorLogisticRegression", show = "time", d = 1000, nr_flows = 64)
