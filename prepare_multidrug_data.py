@@ -4,11 +4,15 @@ import pandas as pd
 import numpy as np
 import sklearn.model_selection
 
-# multidrug$ABC.trans[, "ABCB1"]
-# multidrug$compound
+# data also used in "Empirical Priors for Prediction in Sparse High-dimensional Linear Regression", JMLR, 2020
+# from R package mixOmics with:
+# y <- multidrug$ABC.trans[, "ABCB1"]
+# X <- multidrug$compound
+# write.csv(multidrug$compound,"/Users/danielandrade/ResearchProjects/NormalizingFlows/microarray_data_raw/multidrug_X.csv", row.names = FALSE)
+# write.csv(multidrug$ABC.trans[, "ABCB1"],"/Users/danielandrade/ResearchProjects/NormalizingFlows/microarray_data_raw/multidrug_ABCB1.csv", row.names = FALSE)
 
-# data from "Gene expression microarray public dataset reanalysis in chronic obstructive pulmonary disease"
-# goal detect Chronic obstructive pulmonary disease (COPD) from microarray data
+
+# ...
 
 MICRO_ARRAY_DATA_NAME = "DF2_UpdatedSubsetDataPostBoxCox_Standardized_NONAs_060319.csv"
 

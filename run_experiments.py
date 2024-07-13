@@ -27,7 +27,7 @@ def getAnnealingInterations(max_iterations):
 # for num_samples might try up to 2 ** 15
 def getArgumentParser(data = "no_data", n = None, d = None, foldId = None, D = None, target = None, flow_type = None, cushion_type = None, nr_cushions = None, 
                       nr_mixture_components = 1, divergence = "reverse_kld_without_score", num_samples = 2 ** 8,
-                      nr_flows = None, l2_strength = 0.0, l2_clip_norm = None, loft_t = 100.0, intercept = None, rho = None, max_iterations = None, no_act_norm = "no", init = "zeros", annealing="yes", lr_exp=5, learn_mixture_weights = "no", targetK = -1, targetMeanFac = -1.0, analyzing = None, data_type = "double", realNVP_threshold = None, realNVP_variation = None, realNVP_spec = None, redGradVarEst = None, opt = "Adam", scaleShiftLayer = None, trainable_base = "yes", use_student_base = "no", var = 1.0):
+                      nr_flows = None, l2_strength = 0.0, l2_clip_norm = None, loft_t = 100.0, intercept = None, rho = None, max_iterations = None, no_act_norm = "no", init = "zeros", annealing="yes", lr_exp=5, learn_mixture_weights = "no", targetK = -1, targetMeanFac = -1.0, analyzing = None, data_type = "double", realNVP_threshold = None, realNVP_variation = None, realNVP_spec = None, redGradVarEst = None, opt = "Adam", scaleShiftLayer = None, trainable_base = "yes", use_student_base = "no", var = 1.0, lambd = None):
     
     parser = argparse.ArgumentParser(description="NFM Experiments")
     
@@ -36,6 +36,9 @@ def getArgumentParser(data = "no_data", n = None, d = None, foldId = None, D = N
 
     # variance of MultivariateStudentT
     parser.add_argument("--var", default=var, type=float)
+
+    # lambda hyper-parameter of BayesianLasso
+    parser.add_argument("--lambd", default=lambd, type=float)
 
     parser.add_argument("--data", default=data, type=str)
     parser.add_argument("--n", default=n, type=int)
@@ -165,8 +168,10 @@ def initialize_target_and_flow(args, initialize = True):
         else:
             X, y, true_beta, true_bias = load_data(args)
             
-            # print("use data with X.shape = ", X.shape)
-            target = target_constructor(X, y, true_beta, true_bias)
+            if args.target.startswith("BayesianLasso"):
+                target = target_constructor(X, y, true_beta, true_bias, lambda_hyper_param = args.lambd)
+            else:
+                target = target_constructor(X, y, true_beta, true_bias)
     
     elif args.target == "MultivariateNormalMixture" or args.target == "StudentTMixture":
         target = target_constructor(dim = args.D, K = args.targetK, meanFac = args.targetMeanFac)
@@ -226,7 +231,7 @@ def visualize(prob_target, D, q1 = None, q2 = None, savefigInfo = None):
     return
 
 
-def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, annealing = None, divergence = None, var = None, iteration_setting = None, initialize = False):
+def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, annealing = None, divergence = None, var = None, iteration_setting = None, initialize = False, lambd = None):
     
     setting = {}
 
@@ -258,6 +263,14 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         setting["intercept"] = 0.0
         setting["data"] = "synthetic_regression"
         setting["target"] = "BayesianLasso"
+        setting["foldId"] = foldId
+    elif target_name == "HorseshoeRegression":
+        setting["n"] = 100
+        setting["d"] = D
+        setting["rho"] = 0.5
+        setting["intercept"] = 0.0
+        setting["data"] = "synthetic_regression"
+        setting["target"] = "HorseshoeRegression"
         setting["foldId"] = foldId
     elif target_name ==  "MultivariateNormalMixture":
         setting["target"] = "MultivariateNormalMixture"
@@ -374,6 +387,9 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         print("it = ", setting["max_iterations"])
         assert(False)
 
+    if lambd is not None:
+        setting["lambd"] = lambd
+
     args = getArgumentParser(**setting)
 
     commons.DATA_TYPE = args.data_type
@@ -402,6 +418,7 @@ if __name__ == "__main__":
         torch.manual_seed(432432)
         
         target, flows_mixture = initialize_target_and_flow(args)
+    
     else:
         # helper to easily use most common parameter settings
         # e.g.:
@@ -422,8 +439,10 @@ if __name__ == "__main__":
         parser.add_argument("--annealing", default=None, type=str)
         parser.add_argument("--divergence", default=None, type=str)
         parser.add_argument("--var", default=1.0, type=float)
+        parser.add_argument("--lambd", default=1.0, type=float)
         parser.add_argument("--iteration-setting", default=None, type=str)
 
+        
         real_args = parser.parse_args()
 
         target, flows_mixture, args = simple_init(real_args.target, max(real_args.D, real_args.d), real_args.flow_type, real_args.method, real_args.nr_flows, real_args.foldId, real_args.annealing, real_args.divergence, real_args.var, real_args.iteration_setting, initialize = True)

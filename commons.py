@@ -55,7 +55,10 @@ def loadArray(filenameSuffix):
 def getInfoStr_new(args, TARGET_NAME, DATA_DESCRIPTOR_STR, FLOW_TYPE, NUMBER_OF_FLOWS, MAX_ITERATION, NUM_SAMPLES, DIVERGENCE_FOR_OPTIMIZATION, CUSHION_TYPE, CUSHION_T, L2_STRENGTH, L2_CLIP_NORM, NR_CUSHIONS, INITIALIZATION, ANNEALING, LEARNING_RATE_EXP, NR_MIXTURE_COMPONENTS, LEARN_MIXTURE_WEIGHTS, realNVP_threshold, realNVP_variation, realNVP_spec, redGradVarEst, opt, scaleShiftLayer, trainable_base, use_student_base):
 
     target_name_short = "".join([c for c in TARGET_NAME if c.isupper()])
-    assert(target_name_short == "MNM" or target_name_short == "MST" or target_name_short == "F" or target_name_short == "CLR" or target_name_short == "HPLR" or target_name_short == "STM" or target_name_short == "BL")
+    assert(target_name_short == "MNM" or target_name_short == "MST" or target_name_short == "F" or target_name_short == "CLR" or target_name_short == "HPLR" or target_name_short == "STM" or target_name_short == "BL" or target_name_short == "HR")
+
+    if target_name_short == "BL":
+        target_name_short += "_" + str(args.lambd)
 
     if target_name_short == "MNM" or target_name_short == "STM":
         target_name_short += "_" + str(args.targetK) + "_" + str(args.targetMeanFac)
