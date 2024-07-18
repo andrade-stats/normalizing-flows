@@ -78,7 +78,8 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
     if debug:
         var = None
         # var = 1000.0
-        ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "proposed")]
+        # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip")]
+        ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "SymClip")]
         # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "AsymClip_withStudentT"), ("RealNVP_small", "AsymClip"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "SymClip_trainable_base")]
         # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT")]
         # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed_withStudentT")]
@@ -97,7 +98,7 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
     if (not debug) and (show == "IS" or show == "time"):
         ALL_METHODS.append(("smc", 100000))
 
-    if show == "WD" or show == "time":
+    if (not debug) and (show == "WD" or show == "time"):
        ALL_METHODS.append(("HMC", None))
 
     ROUND_DIGITS = 5
@@ -138,6 +139,7 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
         for i, (flow_type, method) in enumerate(ALL_METHODS):
             
             target, _, args = run_experiments.simple_init(target_name, D, flow_type, method, nr_flows, annealing = annealing_local, divergence = divergence_local, var = var, iteration_setting = iteration_setting, lambd = lambd)
+            # print("args.lambd = ", args.lambd)
             # print("target.true_log_marginal = ", target.true_log_marginal)
 
             available = True
@@ -500,8 +502,8 @@ def showNewExperiments(nr_flows, d = None, lambd = None):
     assert(nr_flows == 64 or nr_flows == 16)
     assert(d is None or d == 1000)
     
-    iteration_setting = "short_try"
-    # iteration_setting = None
+    # iteration_setting = "short_try"
+    iteration_setting = None
 
     ALL_TARGET_NAMES = ["BayesianLasso"]
     # ALL_TARGET_NAMES = ["MultivariateStudentT"]
@@ -535,6 +537,12 @@ def showNewExperiments(nr_flows, d = None, lambd = None):
 if __name__ == "__main__":
     
     showNewExperiments(nr_flows = 64, d = 1000, lambd = 100.0)
+    # showNewExperiments(nr_flows = 64, d = 1000, lambd = 0.1)
+
+    _, output_text_v, _ = showTable(target_name = "BayesianLasso", show = "time", d = 1000, nr_flows = 64, lambd = 100.0, debug = True)
+    print("********************************")
+    print(output_text_v)
+
 
     # shows runtime results:
     # _, output_text_v, _ = showTable(target_name = "HorseshoePriorLogisticRegression", show = "time", d = 1000, nr_flows = 64)

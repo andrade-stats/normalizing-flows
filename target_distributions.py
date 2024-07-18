@@ -408,6 +408,9 @@ class HorseshoeRegression(Target):
 
         self.true_log_marginal = torch.nan # unknown
 
+        print("self.d = ", self.d)
+        print("self.D = ", self.D)
+        
         assert(self.unscaled_betas_ids.shape[0] == self.lambdas_ids.shape[0])
         return
     
@@ -545,6 +548,8 @@ class BayesianLasso(Target):
 
         self.lambda_hyper_param = lambda_hyper_param
 
+        print("self.d = ", self.d)
+        print("self.D = ", self.D)
         print("lambda_hyper_param (of BayesianLasso) = ", self.lambda_hyper_param)
 
         assert(self.all_tau_squared_ids.shape[0] == self.beta_ids.shape[0])

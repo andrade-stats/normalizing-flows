@@ -106,6 +106,10 @@ def getNormalizingFlow(target, flow_type, number_of_flows, nr_samples_for_act_no
             elif flow_type == "Planar":
                 flows += [nf.flows.Planar((latent_size,), act = "leaky_relu")]
             
+            elif flow_type == "NeuralSpline":
+                hidden_layer_size = 100
+                flows += [nf.flows.CoupledRationalQuadraticSpline(latent_size, 1, hidden_layer_size, reverse_mask = (i % 2 == 0))]
+                
             # elif flow_type == "Autoregressive":
             #     flows += [autoregressive.MaskedAffineAutoregressive(features=target.D, hidden_features=30, num_blocks=5)]
             #     # flows += [nf.flows.CircularAutoregressiveRationalQuadraticSpline(target.D, 1, 512, [1], num_bins=10, tail_bound=torch.tensor([5., torch.pi]), permute_mask=True)]  # not recommended because requires too much memory
@@ -395,11 +399,17 @@ def train(nfm, max_iter, anneal_iter = None, show_iter = None, learning_rate = N
                 commons.saveStatistics(all_time_samples_stats, "samples_stats")
 
             if divergence == "reverse_kld_ws_debug":
-                assert(z_stats_median.shape[0] == nfm.number_of_flows + 1)
-                all_stat_z["median"][it] = z_stats_median
-                all_stat_z["high"][it] = z_stats_high
-                all_stat_z["higher"][it] = z_stats_higher
-                all_stat_z["max"][it] = z_stats_max
+                if z_stats_median.shape[0] == 0:
+                    all_stat_z["median"][it] = numpy.nan
+                    all_stat_z["high"][it] = numpy.nan
+                    all_stat_z["higher"][it] = numpy.nan
+                    all_stat_z["max"][it] = numpy.nan
+                else:
+                    assert(z_stats_median.shape[0] == nfm.number_of_flows + 1)
+                    all_stat_z["median"][it] = z_stats_median
+                    all_stat_z["high"][it] = z_stats_high
+                    all_stat_z["higher"][it] = z_stats_higher
+                    all_stat_z["max"][it] = z_stats_max
                 
         # all_time_losses[it] = loss.detach().cpu().numpy()
         # commons.saveStatistics(all_time_losses, "all_losses")
@@ -422,7 +432,7 @@ def train(nfm, max_iter, anneal_iter = None, show_iter = None, learning_rate = N
 
         loss = torch.mean(loss)
         true_loss = torch.mean(true_loss)
-
+        
         if ~(torch.isnan(loss) | torch.isinf(loss)):
 
             if (it > (max_iter / 2)) and ~(torch.isnan(true_loss) | torch.isinf(true_loss)) and (true_loss < current_best_true_loss):

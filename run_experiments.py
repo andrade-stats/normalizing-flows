@@ -118,18 +118,19 @@ def getDataDescriptorStr(args):
     return DATA_DESCRIPTOR_STR
 
 def load_data(args):
-    assert(args.data.startswith("synthetic") or args.data == "COPD" or args.data == "colon")
+    assert(args.data.startswith("synthetic") or args.data == "COPD" or args.data == "colon" or args.data.startswith("multidrug"))
             
     if args.data.startswith("synthetic"):
         X, y, true_beta, true_bias = syntheticData.load_data(args.data, n = args.n, d = args.d, rho = args.rho, bias = args.intercept, foldNr = args.foldId)
     else:
+        print("load data: ", args.data)
         whole_data = np.load("microarray_data_prepared/" + args.data + "_whole_data" + ".npy", allow_pickle=True).item()       
         X = whole_data["X"]
         y = whole_data["y"]
         true_beta = None
         true_bias = None
-        assert(X.shape[1] == 2000)
-        assert(X.shape[0] == 62)
+        # assert(X.shape[1] == 2000)
+        # assert(X.shape[0] == 62)
     
     return X, y, true_beta, true_bias
 
@@ -231,7 +232,7 @@ def visualize(prob_target, D, q1 = None, q2 = None, savefigInfo = None):
     return
 
 
-def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, annealing = None, divergence = None, var = None, iteration_setting = None, initialize = False, lambd = None):
+def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, annealing = None, divergence = None, var = None, iteration_setting = None, initialize = False, lambd = None, data = None):
     
     setting = {}
 
@@ -257,13 +258,16 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         setting["target"] = "ConjugateLinearRegression"
         setting["foldId"] = foldId
     elif target_name == "BayesianLasso":
-        setting["n"] = 100
-        setting["d"] = D
-        setting["rho"] = 0.5
-        setting["intercept"] = 0.0
-        setting["data"] = "synthetic_regression"
         setting["target"] = "BayesianLasso"
-        setting["foldId"] = foldId
+        if data is None:
+            setting["n"] = 100
+            setting["d"] = D
+            setting["rho"] = 0.5
+            setting["intercept"] = 0.0
+            setting["data"] = "synthetic_regression"
+            setting["foldId"] = foldId
+        else:
+            setting["data"] = data
     elif target_name == "HorseshoeRegression":
         setting["n"] = 100
         setting["d"] = D
@@ -284,6 +288,7 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         setting["var"] = var
         
     
+
     # *************** NFM parameters *************
     assert(flow_type is not None)
     setting["flow_type"] = flow_type
@@ -428,7 +433,7 @@ if __name__ == "__main__":
 
         parser = argparse.ArgumentParser(description="Show Table")
         
-        # parser.add_argument("--d", default=, type=int)
+        parser.add_argument("--data", default=None, type=str)
         parser.add_argument("--foldId", default=1, type=int)
         parser.add_argument("--D", default=-1, type=int)
         parser.add_argument("--d", default=-1, type=int)
@@ -442,7 +447,6 @@ if __name__ == "__main__":
         parser.add_argument("--lambd", default=1.0, type=float)
         parser.add_argument("--iteration-setting", default=None, type=str)
 
-        
         real_args = parser.parse_args()
 
         target, flows_mixture, args = simple_init(real_args.target, max(real_args.D, real_args.d), real_args.flow_type, real_args.method, real_args.nr_flows, real_args.foldId, real_args.annealing, real_args.divergence, real_args.var, real_args.iteration_setting, initialize = True)
@@ -461,7 +465,7 @@ if __name__ == "__main__":
     print("LEARNING_RATE = ", LEARNING_RATE)
     print("max_iterations = ", args.max_iterations)
 
-    assert(args.flow_type == "GaussianOnly" or args.flow_type == "RealNVP_small")
+    assert(args.flow_type == "GaussianOnly" or args.flow_type == "RealNVP_small" or args.flow_type == "NeuralSpline")
     
     # if os.path.exists(commons.get_model_filename_best()):
     #    print("FOUND EXISTING MODEL - SKIP TRAINING - LOAD MODEL")

@@ -261,7 +261,8 @@ def reverse_kld_without_score_debug(mixture_nfm, num_samples=1, beta = 1.0, redG
             z_stats_max[masked_affine_flow_id] = z_abs.nanquantile(1.0)
             masked_affine_flow_id += 1
 
-    assert(masked_affine_flow_id == mixture_nfm.number_of_flows + 1)
+    if (type(flow) is nf.flows.MaskedAffineFlow) or (type(flow) is new_flows.MaskedAffineFlowThresholded) or (type(flow) is new_flows.MaskedAffineFlowSquashedSigmoid) or (type(flow) is new_flows.MaskedAffineFlowSoftClamp):
+        assert(masked_affine_flow_id == mixture_nfm.number_of_flows + 1)
 
     if redGradVarEst == "v":
         assert(cushion_t >= 10.0)
@@ -274,7 +275,7 @@ def reverse_kld_without_score_debug(mixture_nfm, num_samples=1, beta = 1.0, redG
     
     if z.shape[0] == 0:
         empty_tensor = torch.tensor([])
-        return empty_tensor, empty_tensor, empty_tensor, empty_tensor, empty_tensor
+        return empty_tensor, empty_tensor, empty_tensor, empty_tensor, empty_tensor, empty_tensor
 
     log_p = nfm.p.log_prob(z)
 

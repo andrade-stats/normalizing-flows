@@ -170,6 +170,7 @@ def load_data(data_type, n, d, rho, bias, foldNr):
     whole_data = np.load("synthetic_data/" + data_type + f"_{n}n_{d}d_{rho}rho_{bias}bias_{foldNr}fold" + ".npy", allow_pickle=True).item()       
     X = whole_data["X"]
     y = whole_data["y"]
+
     true_beta = whole_data["true_beta"]
     true_bias = whole_data["true_bias"]
 
