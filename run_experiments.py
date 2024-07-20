@@ -237,18 +237,21 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
     setting = {}
 
     # *************** Model/Target *************
-    if target_name == "HorseshoePriorLogisticRegression" and D <= 1000:
-        setting["n"] = 100
-        setting["d"] = D
-        setting["rho"] = 0.1
-        setting["intercept"] = 1.0
-        setting["data"] = "synthetic_logistic"
+    if target_name == "HorseshoePriorLogisticRegression":
         setting["target"] = "HorseshoePriorLogisticRegression"
-        setting["foldId"] = foldId
-    elif target_name == "HorseshoePriorLogisticRegression" and D == 2000:
-        setting["data"] = "colon"
-        setting["target"] = "HorseshoePriorLogisticRegression"
-        setting["foldId"] = 0
+        if data is None:
+            assert(D >= 1)
+            setting["n"] = 100
+            setting["d"] = D
+            setting["rho"] = 0.1
+            setting["intercept"] = 1.0
+            setting["data"] = "synthetic_logistic"
+            setting["foldId"] = foldId
+        else:
+            assert(D == -1)
+            assert(data == "colon")
+            setting["data"] = data
+            setting["foldId"] = 0
     elif target_name == "ConjugateLinearRegression":
         setting["n"] = 100
         setting["d"] = D
@@ -260,6 +263,7 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
     elif target_name == "BayesianLasso":
         setting["target"] = "BayesianLasso"
         if data is None:
+            assert(D >= 1)
             setting["n"] = 100
             setting["d"] = D
             setting["rho"] = 0.5
@@ -267,15 +271,23 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
             setting["data"] = "synthetic_regression"
             setting["foldId"] = foldId
         else:
+            assert(D == -1)
+            assert(data != "synthetic_regression")
             setting["data"] = data
     elif target_name == "HorseshoeRegression":
-        setting["n"] = 100
-        setting["d"] = D
-        setting["rho"] = 0.5
-        setting["intercept"] = 0.0
-        setting["data"] = "synthetic_regression"
         setting["target"] = "HorseshoeRegression"
-        setting["foldId"] = foldId
+        if data is None:
+            assert(D >= 1)
+            setting["n"] = 100
+            setting["d"] = D
+            setting["rho"] = 0.5
+            setting["intercept"] = 0.0
+            setting["data"] = "synthetic_regression"
+            setting["foldId"] = foldId
+        else:
+            assert(D == -1)
+            assert(data != "synthetic_regression")
+            setting["data"] = data
     elif target_name ==  "MultivariateNormalMixture":
         setting["target"] = "MultivariateNormalMixture"
         setting["targetK"] = 3
@@ -449,7 +461,7 @@ if __name__ == "__main__":
 
         real_args = parser.parse_args()
 
-        target, flows_mixture, args = simple_init(real_args.target, max(real_args.D, real_args.d), real_args.flow_type, real_args.method, real_args.nr_flows, real_args.foldId, real_args.annealing, real_args.divergence, real_args.var, real_args.iteration_setting, initialize = True)
+        target, flows_mixture, args = simple_init(real_args.target, max(real_args.D, real_args.d), real_args.flow_type, real_args.method, real_args.nr_flows, real_args.foldId, real_args.annealing, real_args.divergence, real_args.var, real_args.iteration_setting, data = real_args.data, lambd = real_args.lambd, initialize = True)
 
     anneal_iter = getAnnealingInterations(args.max_iterations)
     if args.max_iterations < 1000:
