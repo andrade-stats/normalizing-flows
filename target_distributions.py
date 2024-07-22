@@ -21,7 +21,7 @@ EPSILON = 10 ** -6 # to ensure strict positiveness
 # Funnel Distribution as in "Slice sampling", Neal 2003
 class Funnel(Target):
     
-    def __init__(self,dim = 10, scale = 3.0, var = None):
+    def __init__(self,dim = 10, scale = 3.0):
         super().__init__()
         self.scale = scale
         self.other_dim = dim - 1
@@ -163,8 +163,11 @@ class MultivariateNormalMixture(Target):
 # CHECKED
 class MultivariateStudentT(Target):
    
-    def __init__(self, dim, df = 1.0, var = 1.0):
+    def __init__(self, dim, df = 1.0):
         super().__init__()
+
+        var = 1.0
+        
         self.df = torch.tensor(df)
         self.dim = torch.tensor(dim)
         self.loc = 2.0 * torch.ones(dim)

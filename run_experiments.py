@@ -178,7 +178,7 @@ def initialize_target_and_flow(args, initialize = True):
         target = target_constructor(dim = args.D, K = args.targetK, meanFac = args.targetMeanFac)
     else:
         assert(args.target == "Funnel" or args.target == "MultivariateStudentT")
-        target = target_constructor(dim = args.D, var = args.var)
+        target = target_constructor(dim = args.D)
                 
 
     if args.flow_type != "HMC" and args.flow_type != "smc":

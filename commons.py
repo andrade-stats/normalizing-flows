@@ -63,9 +63,9 @@ def getInfoStr_new(args, TARGET_NAME, DATA_DESCRIPTOR_STR, FLOW_TYPE, NUMBER_OF_
     if target_name_short == "MNM" or target_name_short == "STM":
         target_name_short += "_" + str(args.targetK) + "_" + str(args.targetMeanFac)
 
-    if target_name_short == "MST" or target_name_short == "F":
-        target_name_short += "_" + str(args.var)
-        print("target_name_short = ", target_name_short)
+    # if target_name_short == "MST" or target_name_short == "F":
+    #     target_name_short += "_" + str(args.var)
+    #     print("target_name_short = ", target_name_short)
      
     if FLOW_TYPE == "GaussianOnly":
         assert(CUSHION_TYPE is None)
