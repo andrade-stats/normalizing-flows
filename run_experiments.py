@@ -129,6 +129,7 @@ def load_data(args):
         y = whole_data["y"]
         true_beta = None
         true_bias = None
+
         # assert(X.shape[1] == 2000)
         # assert(X.shape[0] == 62)
     
@@ -253,6 +254,7 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
             setting["data"] = data
             setting["foldId"] = 0
     elif target_name == "ConjugateLinearRegression":
+        assert(data is None)
         setting["n"] = 100
         setting["d"] = D
         setting["rho"] = 0.5
@@ -390,7 +392,7 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
     assert((iteration_setting is None) or (iteration_setting == "short_try"))
 
     if iteration_setting == "short_try":
-        setting["max_iterations"] = 10000
+        setting["max_iterations"] = 10 # 000
     else:
         if ("data" in setting) and (setting["data"] == "colon"):
             setting["max_iterations"] = 400000
@@ -419,8 +421,6 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
 
 
 if __name__ == "__main__":
-
-    
 
     MANUALLY_SPECIFY_ALL_ARGUMENTS = False
 

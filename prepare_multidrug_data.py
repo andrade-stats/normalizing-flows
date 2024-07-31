@@ -45,6 +45,7 @@ print("y = ", y)
 whole_data = {}
 whole_data["X"] = X
 whole_data["y"] = y
-np.save("microarray_data_prepared/" + "multidrug_" + TARGET_GENE +  "_whole_data", whole_data)
+# np.save("microarray_data_prepared/" + "multidrug_" + TARGET_GENE +  "_whole_data", whole_data)
 
+print("X.shape = ", X.shape)
 print("saved all prepared data")

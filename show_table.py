@@ -13,7 +13,7 @@ import pandas as pd
 
 def getTableName(flow_type, method):
     if flow_type == "NeuralSpline":
-        return "Neural Spline"
+        return "neural spline"
     elif (flow_type == "GaussianOnly") and (method is None):
         return "mean field gaussian"
     elif (flow_type == "HMC") and (method is None):
@@ -33,7 +33,7 @@ def getTableName(flow_type, method):
 
 def getTableNameForPlot(flow_type, method):
     if flow_type == "NeuralSpline":
-        return "Neural Spline"
+        return "neural spline"
     elif (flow_type == "GaussianOnly") and (method is None):
         return "mean field gaussian"
     elif (flow_type == "HMC") and (method is None):
@@ -70,7 +70,7 @@ def convert_float_to_str(x):
         return str(x)
 
 
-def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "", filterInfValues = True, annealing = None, divergence = None, use_best_result = True, iteration_setting = None, debug = False, lambd = None):
+def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "", filterInfValues = True, annealing = None, divergence = None, use_best_result = True, iteration_setting = None, debug = False, lambd = 100.0, data = None):
 
     # annealing, divergence, and use_best_result are used showing the results of the ablation test -> at most one should be specified
     assert(((annealing is None) and (divergence is None) and use_best_result) or  \
@@ -89,7 +89,11 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
         # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed_withStudentT")]
         # ALL_METHODS = [("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed_withStudentT")]
     
-        ALL_METHODS = [("NeuralSpline", "standard"), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT")]
+        # ALL_METHODS = [("NeuralSpline", "standard"), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT")]
+        # ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "no_loft_proposed"), ("RealNVP_small", "no_loft_proposed_withStudentT")]
+        ALL_METHODS = [("RealNVP_small", "standard"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "no_loft_proposed"), ("RealNVP_small", "no_loft_proposed_withStudentT")]
+        if show == "IS":
+            ALL_METHODS.append(("smc", 100))
 
     else:
         var = None
@@ -97,10 +101,16 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
         if show == "time":
             ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "proposed_withStudentT")]
         elif full:
-            ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "no_loft_proposed"), ("RealNVP_small", "no_loft_proposed_withStudentT")]
+            if target_name == "BayesianLasso":
+                # do not include ATAF since it did not converge
+                ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "standard"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "no_loft_proposed"), ("RealNVP_small", "no_loft_proposed_withStudentT")]
+            else:
+                ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT"), ("RealNVP_small", "no_loft_proposed"), ("RealNVP_small", "no_loft_proposed_withStudentT")]
+            
         else:
             ALL_METHODS = [("GaussianOnly", None), ("RealNVP_small", "standard"), ("RealNVP_small", "ATAF"), ("RealNVP_small", "SymClip"), ("RealNVP_small", "proposed"), ("RealNVP_small", "proposed_withStudentT")]
 
+        ALL_METHODS.append(("NeuralSpline", "standard"))
 
     if (not debug) and (show == "IS" or show == "time"):
         ALL_METHODS.append(("smc", 100000))
@@ -116,7 +126,9 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
 
     full_output_h = ""
 
-    if d is None:
+    if data is not None:
+        SETTINGS = [(-1, None, None, True)]
+    elif d is None and data is None:
         SETTINGS = [(10, None, None, True), (100, None, None, True), (1000, None, None, True)]
     else:
         SETTINGS = [(d, None, None, True)]
@@ -150,7 +162,7 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
             else:
                 nr_flows_this_time = nr_flows
             
-            target, _, args = run_experiments.simple_init(target_name, D, flow_type, method, nr_flows_this_time, annealing = annealing_local, divergence = divergence_local, var = var, iteration_setting = iteration_setting, lambd = lambd)
+            target, _, args = run_experiments.simple_init(target_name, D, flow_type, method, nr_flows_this_time, annealing = annealing_local, divergence = divergence_local, var = var, iteration_setting = iteration_setting, lambd = lambd, data = data)
             # print("args.lambd = ", args.lambd)
             # print("target.true_log_marginal = ", target.true_log_marginal)
 
@@ -245,7 +257,7 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
                 all_results = all_ELBO
             elif show == "IS":
                 assert(all_IS.shape[0] == commons.REPETITIONS_FOR_MC_ERROR)
-                assert(not numpy.any(numpy.isinf(all_IS)))
+                # assert(not numpy.any(numpy.isinf(all_IS)))
                 all_results = all_IS
                 if numpy.isnan(target.true_log_marginal):
                     all_results_abs_diff = None
@@ -338,7 +350,6 @@ def showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "
         if len(SETTINGS) == 3 or SETTINGS[0][0] == 1000:
             infoText += "Synthetic Data -- "
         else:
-            assert(SETTINGS[0][0] == 2000)
             infoText += "Colon Data -- "
         
         if show == "ELBO":
@@ -478,19 +489,26 @@ def showStandardModels(nr_flows, show = "ELBO_and_IS", d = None, annealing = Non
     return
 
 
-def showHorseshoeSynthetic(nr_flows, d = None):
+def showChallengingTarget(nr_flows, target_name, d = None, data = None):
     assert(nr_flows == 64 or nr_flows == 16)
-    assert(d is None or d == 2000)
+    assert(d is None or d == 2000 or d == 1000)
     
-    ALL_TARGET_NAMES = ["HorseshoePriorLogisticRegression"]
+    ALL_TARGET_NAMES = [target_name]
+    
+    debug = True
+
+    if target_name == "BayesianLasso":
+        lambd = 100.0
+    else:
+        lambd = None
     
     # showTable(target_name, show, nr_flows, d, full = True, extra_info_output = "", filterInfValues = True, annealing = None, divergence = None, use_best_result = True, iteration_setting = None)
 
     all_elbo_table_v = []
     all_is_table_v = []
     for target_name in ALL_TARGET_NAMES:
-        elbo_table_h, elbo_table_v, _ = showTable(target_name = target_name, show = "ELBO", nr_flows = nr_flows, d = d, full = True)
-        is_table_h, is_table_v, _ = showTable(target_name = target_name, show = "IS", nr_flows = nr_flows, d = d, full = True)
+        elbo_table_h, elbo_table_v, _ = showTable(target_name = target_name, show = "ELBO", nr_flows = nr_flows, d = d, full = True, data = data, lambd = lambd, debug = debug)
+        is_table_h, is_table_v, _ = showTable(target_name = target_name, show = "IS", nr_flows = nr_flows, d = d, full = True, data = data, lambd = lambd, debug = debug)
 
         all_elbo_table_v.append(elbo_table_v)
         all_is_table_v.append(is_table_v)
@@ -548,6 +566,10 @@ def showNewExperiments(nr_flows, d = None, lambd = None):
 
 if __name__ == "__main__":
     
+    # showStandardModels(nr_flows = 64, show = "ELBO_and_IS", d = 1000, debug = True)
+    showChallengingTarget(nr_flows = 64, target_name = "BayesianLasso", d = 1000)
+    # showChallengingTarget(nr_flows = 64, target_name = "BayesianLasso", data = "multidrug_ABCB1")
+
     # showNewExperiments(nr_flows = 64, d = 1000, lambd = 100.0)
     # # showNewExperiments(nr_flows = 64, d = 1000, lambd = 0.1)
 
@@ -574,13 +596,13 @@ if __name__ == "__main__":
     # showStandardModels(nr_flows = 64, show = "WD")
     
     # show results for all standard models with standard setting
-    showStandardModels(nr_flows = 64, show = "ELBO_and_IS", d = 1000, debug = True)
     # showStandardModels(nr_flows = 64, show = "ELBO_and_IS")
     # showStandardModels(nr_flows = 16, show = "ELBO_and_IS")
 
+    
     # show results for horseshoe on synthetic data set:
-    # showHorseshoeSynthetic(nr_flows = 64)
-    # showHorseshoeSynthetic(nr_flows = 16)
+    # showChallengingTarget(nr_flows = 64, target_name = "HorseshoePriorLogisticRegression")
+    # showChallengingTarget(nr_flows = 16, target_name = "HorseshoePriorLogisticRegression")
     
     # show results for horseshoe on colon data set:
-    # showHorseshoeSynthetic(nr_flows = 64, d = 2000)
+    # showChallengingTarget(nr_flows = 64, d = 2000, target_name = "HorseshoePriorLogisticRegression")

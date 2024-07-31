@@ -572,9 +572,9 @@ class BayesianLasso(Target):
             intercept = z[:, self.intercept_id]
 
             assert(beta.shape[0] >= 256) # Monte Carlo Samples
-            assert(beta.shape[1] == self.d) 
+            assert(beta.shape[1] == self.d)
             assert(intercept.shape[0] >= 256)
-            assert(intercept.shape[1] == 1) 
+            assert(intercept.shape[1] == 1)
 
             beta = beta.cpu().numpy()
             intercept = intercept.cpu().numpy()
@@ -742,6 +742,7 @@ class HorseshoePriorLogisticRegression(Target):
         tau_prior_log_prob = torch.sum(tau_prior_log_prob, axis = 1)
         unscaled_betas_prior_log_prob = torch.sum(unscaled_betas_prior_log_prob, axis = 1)
         intercept_prior_log_prob = torch.sum(intercept_prior_log_prob, axis = 1)
+        
         # print("**************")
         # print("lambdas_prior_log_prob.shape = ", lambdas_prior_log_prob.shape)
         # print("tau_prior_log_prob.shape = ", tau_prior_log_prob.shape)
