@@ -1,3 +1,4 @@
+import os
 import evaluation
 import commons
 import torch
@@ -13,6 +14,8 @@ import argparse
 
 import syntheticData
 import numpy as np
+
+import sys
 
 def getAnnealingInterations(max_iterations):
     MAX_ANNEALING_ITERATIONS = 10000
@@ -159,7 +162,16 @@ def evaluate_marginal_likelihood(nfm):
 
 
 def initialize_target_and_flow(args, initialize = True):
+    
+    if args.flow_type != "HMC" and args.flow_type != "smc":
+        commons.INFO_STR = commons.getInfoStr_new(args, args.target, getDataDescriptorStr(args), args.flow_type, args.nr_flows, args.max_iterations, args.num_samples, args.divergence,  args.cushion, args.loft_t, args.l2_strength, args.l2_clip_norm, args.nr_cushions, args.initialization, args.annealing, args.lr_exp, args.nr_mixture_components, args.learn_mixture_weights, args.realNVP_threshold, args.realNVP_variation, args.realNVP_spec, args.redGradVarEst, args.opt, args.scaleShiftLayer, args.trainable_base, args.use_student_base)
+    else:
+        assert(not initialize)
+        commons.INFO_STR = None
+    
+    
     target_constructor = getattr(target_distributions, args.target)
+
 
     if args.target.startswith("Conjugate") or args.target.startswith("Horseshoe") or args.target.startswith("BayesianLasso"):
         assert(args.D is None)
@@ -174,21 +186,15 @@ def initialize_target_and_flow(args, initialize = True):
                 target = target_constructor(X, y, true_beta, true_bias, lambda_hyper_param = args.lambd)
             else:
                 target = target_constructor(X, y, true_beta, true_bias)
-    
     elif args.target == "MultivariateNormalMixture" or args.target == "StudentTMixture":
         target = target_constructor(dim = args.D, K = args.targetK, meanFac = args.targetMeanFac)
     else:
         assert(args.target == "Funnel" or args.target == "MultivariateStudentT")
         target = target_constructor(dim = args.D)
-                
+        
 
-    if args.flow_type != "HMC" and args.flow_type != "smc":
-        commons.INFO_STR = commons.getInfoStr_new(args, args.target, getDataDescriptorStr(args), args.flow_type, args.nr_flows, args.max_iterations, args.num_samples, args.divergence,  args.cushion, args.loft_t, args.l2_strength, args.l2_clip_norm, args.nr_cushions, args.initialization, args.annealing, args.lr_exp, args.nr_mixture_components, args.learn_mixture_weights, args.realNVP_threshold, args.realNVP_variation, args.realNVP_spec, args.redGradVarEst, args.opt, args.scaleShiftLayer, args.trainable_base, args.use_student_base)
-    else:
-        assert(not initialize)
-        commons.INFO_STR = None
-    
     if initialize:
+        
         flows_mixture = core.FlowsMixture(target, K = args.nr_mixture_components, flow_type = args.flow_type, number_of_flows = args.nr_flows, nr_samples_for_act_norm = args.num_samples, initial_loc_spec = args.initialization, learn_mixture_weights = (args.learn_mixture_weights == "yes"), cushion_type = args.cushion, cushion_t = args.loft_t, nr_cushions = args.nr_cushions, no_act_norm = (args.no_act_norm == "yes"), realNVP_threshold = args.realNVP_threshold, realNVP_variation = args.realNVP_variation, realNVP_spec = args.realNVP_spec, redGradVarEst = args.redGradVarEst, scaleShiftLayer = args.scaleShiftLayer, trainable_base = args.trainable_base, use_student_base = args.use_student_base)
         
         print("*******")
@@ -233,7 +239,7 @@ def visualize(prob_target, D, q1 = None, q2 = None, savefigInfo = None):
     return
 
 
-def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, annealing = None, divergence = None, var = None, iteration_setting = None, initialize = False, lambd = None, data = None):
+def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, annealing = None, divergence = None, var = None, iteration_setting = None, initialize = False, lambd = None, data = None, only_args = False):
     
     setting = {}
 
@@ -344,6 +350,35 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
                 setting["use_student_base"] = "yes"
             else:
                 assert(method == "no_loft_proposed")
+        elif method.startswith("no_loft_no_clamp_proposed"):
+            setting["trainable_base"] = "no"
+            setting["cushion_type"] = "none"
+            setting["realNVP_threshold"] = None
+            setting["realNVP_variation"] = None
+            setting["scaleShiftLayer"] = "ssL"
+            if method == "no_loft_no_clamp_proposed_withStudentT":
+                setting["use_student_base"] = "yes"
+            else:
+                assert(method == "no_loft_no_clamp_proposed")
+        elif method.startswith("proposed_both"):
+            setting["trainable_base"] = "yes"
+            setting["cushion_type"] = "LOFT"
+            setting["realNVP_threshold"] = 0.1
+            setting["realNVP_variation"] = "var19"
+            setting["scaleShiftLayer"] = "ssL"
+            if method == "proposed_both_withStudentT":
+                setting["use_student_base"] = "yes"
+            else:
+                assert(method == "proposed_both")
+        elif method.startswith("proposed_reverse"):
+            setting["trainable_base"] = "yes"
+            setting["cushion_type"] = "LOFT"
+            setting["realNVP_threshold"] = 0.1
+            setting["realNVP_variation"] = "var19"
+            if method == "proposed_reverse_withStudentT":
+                setting["use_student_base"] = "yes"
+            else:
+                assert(method == "proposed_reverse")
         elif method.startswith("proposed"):
             setting["trainable_base"] = "no"
             setting["cushion_type"] = "LOFT"
@@ -354,6 +389,10 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
                 setting["use_student_base"] = "yes"
             else:
                 assert(method == "proposed")
+        elif method == "standard_both":
+            setting["trainable_base"] = "yes"
+            setting["cushion_type"] = "none"
+            setting["scaleShiftLayer"] = "ssL"
         elif method == "standard":
             setting["trainable_base"] = "yes"
             setting["cushion_type"] = "none"
@@ -389,10 +428,12 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         else:
            assert(False)
     
-    assert((iteration_setting is None) or (iteration_setting == "short_try"))
+    assert((iteration_setting is None) or (iteration_setting == "short_try") or (iteration_setting == "medium"))
 
     if iteration_setting == "short_try":
-        setting["max_iterations"] = 10 # 000
+        setting["max_iterations"] = 10
+    elif iteration_setting == "medium":
+        setting["max_iterations"] = 30000
     else:
         if ("data" in setting) and (setting["data"] == "colon"):
             setting["max_iterations"] = 400000
@@ -403,8 +444,8 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
         assert(divergence == "reverse_kld")
         setting["divergence"] = divergence
         setting["max_iterations"] = int(1.5 * setting["max_iterations"])
-        print("it = ", setting["max_iterations"])
-        assert(False)
+        # print("it = ", setting["max_iterations"])
+        # assert(False)
 
     if lambd is not None:
         setting["lambd"] = lambd
@@ -416,9 +457,8 @@ def simple_init(target_name, D, flow_type, method, nr_flows = 64, foldId = 1, an
     torch.manual_seed(432432)
 
     target, flows_mixture = initialize_target_and_flow(args, initialize)
-
     return target, flows_mixture, args
-
+    
 
 if __name__ == "__main__":
 
@@ -426,7 +466,7 @@ if __name__ == "__main__":
 
     print("normflows - Version = ", normflows.__version__)
     print("PyTorch - Version = ", torch.__version__)
-
+    
     if MANUALLY_SPECIFY_ALL_ARGUMENTS:
         args = getArgumentParser()
 
@@ -463,6 +503,7 @@ if __name__ == "__main__":
 
         target, flows_mixture, args = simple_init(real_args.target, max(real_args.D, real_args.d), real_args.flow_type, real_args.method, real_args.nr_flows, real_args.foldId, real_args.annealing, real_args.divergence, real_args.var, real_args.iteration_setting, data = real_args.data, lambd = real_args.lambd, initialize = True)
 
+    
     anneal_iter = getAnnealingInterations(args.max_iterations)
     if args.max_iterations < 1000:
         show_iter = 50
@@ -479,11 +520,14 @@ if __name__ == "__main__":
 
     assert(args.flow_type == "GaussianOnly" or args.flow_type == "RealNVP_small" or args.flow_type == "NeuralSpline")
     
-    # if os.path.exists(commons.get_model_filename_best()):
-    #    print("FOUND EXISTING MODEL - SKIP TRAINING - LOAD MODEL")
-    #    flows_mixture.load_state_dict(torch.load(commons.get_model_filename_best(), map_location = commons.DEVICE))
-    # else:
-    nr_optimization_steps, current_best_true_loss = core.train(flows_mixture, args.max_iterations, anneal_iter, show_iter, learning_rate = LEARNING_RATE, record_stats=True, l2_strength = args.l2_strength, l2_clip_norm = args.l2_clip_norm, num_samples = args.num_samples, divergence = args.divergence, annealing = (args.annealing == "yes"), redGradVarEst = args.redGradVarEst, cushion_t = args.loft_t, opt = args.opt)
+    if os.path.exists(commons.get_model_filename_best()):
+       print("FOUND EXISTING MODEL - SKIP TRAINING - LOAD MODEL AND ANALYZE GRADIENTS")
+       flows_mixture.load_state_dict(torch.load(commons.get_model_filename_best(), map_location = commons.DEVICE))
+       nr_optimization_steps, current_best_true_loss = core.train(flows_mixture, args.max_iterations, anneal_iter, show_iter, learning_rate = LEARNING_RATE, record_stats=False, l2_strength = args.l2_strength, l2_clip_norm = args.l2_clip_norm, num_samples = args.num_samples, divergence = args.divergence, annealing = (args.annealing == "yes"), redGradVarEst = args.redGradVarEst, cushion_t = args.loft_t, opt = args.opt, analyzeGrads = True)
+       sys.exit(0)
+    else:
+        nr_optimization_steps, current_best_true_loss = core.train(flows_mixture, args.max_iterations, anneal_iter, show_iter, learning_rate = LEARNING_RATE, record_stats=True, l2_strength = args.l2_strength, l2_clip_norm = args.l2_clip_norm, num_samples = args.num_samples, divergence = args.divergence, annealing = (args.annealing == "yes"), redGradVarEst = args.redGradVarEst, cushion_t = args.loft_t, opt = args.opt)
+
 
     print("*****************************")    
     print("nr_optimization_steps = ", nr_optimization_steps)

@@ -1,5 +1,4 @@
 import numpy
-import sklearn.metrics
 
 
 def getOutlierRecall(trueOutlierIndicesZeroOne, estimatedOutlierIndicesZeroOne, calculationForRPrecision = True):
@@ -45,34 +44,6 @@ def showOutlierDetectionPerformance_power_fdr(trueOutlierIndicesZeroOne, estimat
     return outlierRecall, nrFalseDetections, FDR
 
 
-
-def showOutlierDetectionPerformance_auc_top(trueOutlierIndicesZeroOne, pValues, dataType = ""):
-    
-    ROUND_DIGITS = 2
-
-    nrTrueOutliers = numpy.sum(trueOutlierIndicesZeroOne)
-
-    if nrTrueOutliers >= 1:
-        # calculates R-precision
-        outlierIds = numpy.argsort(pValues)[0:nrTrueOutliers]
-        estimatedOutlierIndicesZeroOne = numpy.zeros_like(trueOutlierIndicesZeroOne)
-        estimatedOutlierIndicesZeroOne[outlierIds] = 1
-        outlierRecall_topNrTrueOutliers = getOutlierRecall(trueOutlierIndicesZeroOne, estimatedOutlierIndicesZeroOne)
-        
-        auc = sklearn.metrics.roc_auc_score(y_true = trueOutlierIndicesZeroOne, y_score = 1.0 - pValues)
-
-        first_outlier_quantile = None
-        for nr_from_left, pValue_index in enumerate(numpy.argsort(-pValues)):
-            if trueOutlierIndicesZeroOne[pValue_index] == 1:
-                first_outlier_quantile = nr_from_left
-                break
-        assert(first_outlier_quantile is not None)
-
-        first_outlier_quantile = first_outlier_quantile / trueOutlierIndicesZeroOne.shape[0]
-        return auc, outlierRecall_topNrTrueOutliers, first_outlier_quantile
-    else:
-        print("no outliers therefore auc and outlier recall set to 1.0")
-        return 1.0, 1.0, 0
 
 
 def showAvgAndStd_str(results_allFolds, ROUND_DIGITS = 5):

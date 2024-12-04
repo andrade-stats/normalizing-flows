@@ -15,13 +15,17 @@ NUM_WARMUP_MCMC = 100000
 NUM_CHAINS_MCMC = 4
 THINNING_MCMC = 10
 
+ALL_RESULTS = "all_results/"
+ALL_MODELS = "all_trained_models/"
+
+# ALL_RESULTS = "all_results_new2/"
+# ALL_MODELS = "all_trained_models_new/"
+
 def get_model_filename():
-    # return "all_results/" + INFO_STR + "_q_model"
-    return "all_trained_models/" + INFO_STR + "_q_model"
+    return ALL_MODELS + INFO_STR + "_q_model"
 
 def get_model_filename_best():
-    # best_model_filename_str = "all_results/" + INFO_STR + "_q_model_best"
-    best_model_filename_str = "all_trained_models/" + INFO_STR + "_q_model_best"
+    best_model_filename_str = ALL_MODELS + INFO_STR + "_q_model_best"
     print("best model filename = ", best_model_filename_str)
     return best_model_filename_str
 
@@ -35,20 +39,20 @@ def moveToDevice(obj):
     return obj
 
 def saveStatistics(obj, filenameSuffix):
-    filename = "all_results/" + INFO_STR + "_" + filenameSuffix
+    filename = ALL_RESULTS + INFO_STR + "_" + filenameSuffix
     numpy.save(filename, obj)
-    # print("successfully saved to ", filename)
+    print("successfully saved to ", filename)
     return
 
 def loadStatistics(filenameSuffix, info_str = None):
     if info_str is not None:
-        filename = "all_results/" + info_str + "_" + filenameSuffix
+        filename = ALL_RESULTS + info_str + "_" + filenameSuffix
     else:
-        filename = "all_results/" + INFO_STR + "_" + filenameSuffix
+        filename = ALL_RESULTS + INFO_STR + "_" + filenameSuffix
     return numpy.load(filename + ".npy", allow_pickle = True).item()
 
 def loadArray(filenameSuffix):
-    filename = "all_results/" + INFO_STR + "_" + filenameSuffix
+    filename = ALL_RESULTS + INFO_STR + "_" + filenameSuffix
     return numpy.load(filename + ".npy", allow_pickle = True)
 
 
@@ -128,7 +132,7 @@ def getInfoStr_new(args, TARGET_NAME, DATA_DESCRIPTOR_STR, FLOW_TYPE, NUMBER_OF_
     if use_student_base == "yes":
         basic_info_str += "_ST"
     
-    assert(len("all_results/" + basic_info_str) < 220)
+    assert(len(ALL_RESULTS + basic_info_str) < 220)
     print("basic_info_str = ", basic_info_str)
     
     return basic_info_str

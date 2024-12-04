@@ -2,7 +2,7 @@ import torch
 
 import numpy as np
 from normflows.flows.affine.coupling import Flow
-from scipy import optimize
+# from scipy import optimize
 
 import commons
 
@@ -61,65 +61,65 @@ class TrainableLOFTLayer(Flow):
         return new_value, log_det
 
 
-class ScaledTanhLayer(Flow):
+# class ScaledTanhLayer(Flow):
     
-    def __init__(self, dim, t):
-        super().__init__()
-        self.dim = dim
-        self.s = torch.tensor(ScaledTanhLayer.get_optimal_scaling(torch.tensor(t)))
-        self.s = commons.moveToDevice(self.s)
-        print("ScaledTanhLayer s = ", self.s)
-        return
+#     def __init__(self, dim, t):
+#         super().__init__()
+#         self.dim = dim
+#         self.s = torch.tensor(ScaledTanhLayer.get_optimal_scaling(torch.tensor(t)))
+#         self.s = commons.moveToDevice(self.s)
+#         print("ScaledTanhLayer s = ", self.s)
+#         return
     
 
-    # set scaling parameter s such that 
-    # derivative at 0 is 1 and 
-    # LOFT(2.0 * t) = scaled_tanh(2.0 * t)
-    def get_optimal_scaling(t):
-        t1 = 2.0 * t.item()
-        t2 = TrainableLOFTLayer.LOFT_forward_static(t, 2.0 * t)[0].item()
+#     # set scaling parameter s such that 
+#     # derivative at 0 is 1 and 
+#     # LOFT(2.0 * t) = scaled_tanh(2.0 * t)
+#     def get_optimal_scaling(t):
+#         t1 = 2.0 * t.item()
+#         t2 = TrainableLOFTLayer.LOFT_forward_static(t, 2.0 * t)[0].item()
 
-        def f(s):
-            return s * np.tanh((1.0 / s) * t1) - t2
+#         def f(s):
+#             return s * np.tanh((1.0 / s) * t1) - t2
 
-        lb = 1.0
-        rb = 2.0 * t.item()
+#         lb = 1.0
+#         rb = 2.0 * t.item()
 
-        # print("t1 = ", t1)
-        # print("t2 = ", t2)
-        # print("left_bound_value = ", f(lb))
-        # print("right_bound_value = ", f(rb))
+#         # print("t1 = ", t1)
+#         # print("t2 = ", t2)
+#         # print("left_bound_value = ", f(lb))
+#         # print("right_bound_value = ", f(rb))
 
-        solution = optimize.root_scalar(f, bracket = [lb, rb], method='brentq')
-        return solution.root
+#         solution = optimize.root_scalar(f, bracket = [lb, rb], method='brentq')
+#         return solution.root
     
     
-    def forward(self, z):
-        assert(self.s.requires_grad == False)
-        assert(z.shape[0] >= MIN_NR_MCMC_SAMPLES) # batch size
-        assert(z.shape[1] >= 10) # dimension
+#     def forward(self, z):
+#         assert(self.s.requires_grad == False)
+#         assert(z.shape[0] >= MIN_NR_MCMC_SAMPLES) # batch size
+#         assert(z.shape[1] >= 10) # dimension
 
-        tanh_part = torch.tanh(z / self.s)
-        new_value = self.s * tanh_part
+#         tanh_part = torch.tanh(z / self.s)
+#         new_value = self.s * tanh_part
 
-        log_derivatives = torch.log(1.0 - torch.square(tanh_part))
+#         log_derivatives = torch.log(1.0 - torch.square(tanh_part))
 
-        log_det = torch.sum(log_derivatives, axis = 1)
+#         log_det = torch.sum(log_derivatives, axis = 1)
         
-        return new_value, log_det
+#         return new_value, log_det
 
-    def inverse(self, z):
-        assert(self.s.requires_grad == False)
-        assert(z.shape[0] >= MIN_NR_MCMC_SAMPLES) # Monte Carlo Samples
-        assert(z.shape[1] >= 10) # dimension
+#     def inverse(self, z):
+#         assert(self.s.requires_grad == False)
+#         assert(z.shape[0] >= MIN_NR_MCMC_SAMPLES) # Monte Carlo Samples
+#         assert(z.shape[1] >= 10) # dimension
         
-        new_value = self.s * torch.atanh(z / self.s)
+#         new_value = self.s * torch.atanh(z / self.s)
 
-        log_derivatives = - torch.log(1.0 - torch.square(z / self.s))
+#         log_derivatives = - torch.log(1.0 - torch.square(z / self.s))
 
-        log_det = torch.sum(log_derivatives, axis = 1)
+#         log_det = torch.sum(log_derivatives, axis = 1)
         
-        return new_value, log_det
+#         return new_value, log_det
     
 
 class TruncationLayer(Flow):

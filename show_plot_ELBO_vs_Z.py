@@ -9,8 +9,11 @@ import pandas as pd
 import seaborn as sns
 import show_table
 
-def showPlot(all_subplots, target_name, pos, include_GaussianOnly, confidence_interval_use_bootstrap):
+def showPlot(all_subplots, target_name, pos, include_GaussianOnly, confidence_interval_use_bootstrap, show_x_label, show_y_label):
     
+    LARGE_SIZE = 25
+    MEDIUM_SIZE = 20
+
     NR_FLOWS_LOW = 16
     NR_FLOWS_HIGH = 64
 
@@ -32,9 +35,8 @@ def showPlot(all_subplots, target_name, pos, include_GaussianOnly, confidence_in
 
     for i, (flow_type, method, nr_flows) in enumerate(ALL_METHODS):
         
-        target, _, _ = run_experiments.simple_init(target_name, D, flow_type, method, nr_flows)
-        assert(not numpy.isnan(target.true_log_marginal))
-
+        run_experiments.simple_init(target_name, D, flow_type, method, nr_flows)
+       
         try:
             result = commons.loadStatistics("log_marginal_eval_result_best")
             nr_optimization_steps = commons.loadArray("optSteps").item()
@@ -42,7 +44,15 @@ def showPlot(all_subplots, target_name, pos, include_GaussianOnly, confidence_in
             all_ELBO = result["ELBO"]
             all_IS = result["IS"]
             runtime = result["training_time_in_minutes"]
-        
+            true_log_marginal = result["true_log_marginal"]
+            
+            # in the previous version of the source code the true_log_marginal was wrongly calculated, therefore correct it here
+            if target_name == "ConjugateLinearRegression":
+                assert(D == 1000)
+                true_log_marginal = -320.5926669536922  
+                
+            print("true_log_marginal = ", true_log_marginal)
+
         except FileNotFoundError:
             print(f"ERROR COULD NOT FIND FILE, spec = {flow_type} - {method} - {D}")
             assert(False)
@@ -52,8 +62,8 @@ def showPlot(all_subplots, target_name, pos, include_GaussianOnly, confidence_in
         all_results_negative_ELBO[i] =  - numpy.nanmean(all_ELBO)
 
         assert(not numpy.any(numpy.isinf(all_IS)))
-        
-        all_results_abs_diff = numpy.abs(all_IS - target.true_log_marginal)
+
+        all_results_abs_diff = numpy.abs(all_IS - true_log_marginal)
         all_results_Z_abs_diff[i] = numpy.nanmean(all_results_abs_diff)
     
     print("len(ALL_METHODS) = ", len(ALL_METHODS))
@@ -61,16 +71,11 @@ def showPlot(all_subplots, target_name, pos, include_GaussianOnly, confidence_in
     print("all_results_Z_abs_diff = ", all_results_Z_abs_diff)
 
     all_results_ELBO = - all_results_negative_ELBO
-
-    # X_LABEL = "error in marginal likelihood"
-    # Y_LABEL = "negative ELBO"
     
     Y_LABEL = "error in marginal likelihood"
     X_LABEL = "ELBO"
 
     # OUTPUT_FILENAME = "all_plots_new/" + target_name + "_negELBO_vs_Zdiff_" + str(D) + "dim.png"
-
-    
     
     # all_subplots.plot(all_results_Z_abs_diff, all_results_negative_ELBO, 'o', color = "blue")
     
@@ -140,22 +145,41 @@ def showPlot(all_subplots, target_name, pos, include_GaussianOnly, confidence_in
     
     corr_info_text = r"$\rho \in " + interval_str + "$"
     title_text = show_table.getTableNameForTargetModel(target_name)  + ", " + corr_info_text
-    current_sub_plot.set_title(title_text, fontsize=15)
+    current_sub_plot.set_title(title_text, fontsize=LARGE_SIZE)
     
+    if target_name == "ConjugateLinearRegression":
+        # define manually for better layout
+        current_sub_plot.set_xticks([-2250, -1750, -1250, -750, -250], labels=[-2250, -1750, -1250, -750, -250])
+        
+    if show_x_label:
+        current_sub_plot.set_xlabel(X_LABEL, fontsize = MEDIUM_SIZE)
+    else:
+        current_sub_plot.set_xlabel("", fontsize = MEDIUM_SIZE)
+
+    if show_y_label:
+        current_sub_plot.set_ylabel(Y_LABEL, fontsize = MEDIUM_SIZE)
+    else:
+        current_sub_plot.set_ylabel("", fontsize = MEDIUM_SIZE)
+
+    current_sub_plot.xaxis.set_tick_params(labelsize=MEDIUM_SIZE)
+    current_sub_plot.yaxis.set_tick_params(labelsize=MEDIUM_SIZE)
+
     return
 
 if __name__ == "__main__":
 
-    fig, all_subplots = plt.subplots(2, 2, figsize=(15, 10))
+    fig, all_subplots = plt.subplots(2, 2, figsize=(20, 10))
 
     WITH_GAUSSIAN = True
     USE_BOOTSTRAP = True
 
-    showPlot(all_subplots, target_name = "Funnel", pos = (0,0), include_GaussianOnly = WITH_GAUSSIAN, confidence_interval_use_bootstrap = USE_BOOTSTRAP)
-    showPlot(all_subplots, target_name = "MultivariateStudentT", pos = (0,1), include_GaussianOnly = WITH_GAUSSIAN, confidence_interval_use_bootstrap = USE_BOOTSTRAP)
-    showPlot(all_subplots, target_name = "MultivariateNormalMixture", pos = (1,0), include_GaussianOnly = WITH_GAUSSIAN, confidence_interval_use_bootstrap = USE_BOOTSTRAP)
-    showPlot(all_subplots, target_name = "ConjugateLinearRegression", pos = (1,1), include_GaussianOnly = WITH_GAUSSIAN, confidence_interval_use_bootstrap = USE_BOOTSTRAP)
+    showPlot(all_subplots, target_name = "Funnel", pos = (0,0), include_GaussianOnly = WITH_GAUSSIAN, confidence_interval_use_bootstrap = USE_BOOTSTRAP, show_x_label = False, show_y_label = True)
+    showPlot(all_subplots, target_name = "MultivariateStudentT", pos = (0,1), include_GaussianOnly = WITH_GAUSSIAN, confidence_interval_use_bootstrap = USE_BOOTSTRAP, show_x_label = False, show_y_label = False)
+    showPlot(all_subplots, target_name = "MultivariateNormalMixture", pos = (1,0), include_GaussianOnly = WITH_GAUSSIAN, confidence_interval_use_bootstrap = USE_BOOTSTRAP, show_x_label = True, show_y_label = True)
+    showPlot(all_subplots, target_name = "ConjugateLinearRegression", pos = (1,1), include_GaussianOnly = WITH_GAUSSIAN, confidence_interval_use_bootstrap = USE_BOOTSTRAP, show_x_label = True, show_y_label = False)
 
-    OUTPUT_FILENAME = "all_plots_final/" + "negELBO_vs_Zdiff_all" + ".png"
+    OUTPUT_FILENAME = "../NormalizingFlows_private/latex/IOP/IOP_final/"  + "negELBO_vs_Zdiff_all" + ".png"
     fig.tight_layout(pad = 2.0)
-    fig.savefig(OUTPUT_FILENAME)
+    
+    plt.show()
+    # fig.savefig(OUTPUT_FILENAME)

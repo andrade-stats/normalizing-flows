@@ -63,6 +63,7 @@ def getNormalizingFlow(target, flow_type, number_of_flows, nr_samples_for_act_no
                 translation_nn = nf.nets.MLP([latent_size, hidden_layer_size, latent_size], init_zeros=True)
 
                 if realNVP_spec is not None:
+                    assert(False)
                     assert(realNVP_threshold is not None)
                     MaskedAffineFlow_var_constructor = getattr(new_flows, realNVP_spec)
                     if i % 2 == 0:
@@ -303,7 +304,7 @@ class ActNorm(AffineConstFlow):
 
 
 
-def train(nfm, max_iter, anneal_iter = None, show_iter = None, learning_rate = None, l2_strength = 0.0, l2_clip_norm = None, divergence = None, target_p = None, q_aux = None, num_samples = None, lambda_value = 1.0, record_stats = True, annealing = True, redGradVarEst = None, cushion_t = None, opt = None):
+def train(nfm, max_iter, anneal_iter = None, show_iter = None, learning_rate = None, l2_strength = 0.0, l2_clip_norm = None, divergence = None, target_p = None, q_aux = None, num_samples = None, lambda_value = 1.0, record_stats = True, annealing = True, redGradVarEst = None, cushion_t = None, opt = None, analyzeGrads = False):
 
     print("max_iter = ", max_iter)
     print("anneal_iter = ", anneal_iter)
@@ -333,7 +334,7 @@ def train(nfm, max_iter, anneal_iter = None, show_iter = None, learning_rate = N
         all_stat_z["higher"] = numpy.zeros((max_iter, nfm.number_of_flows + 1))
         all_stat_z["max"] = numpy.zeros((max_iter, nfm.number_of_flows + 1))
 
-    assert(l2_strength == 0.0)    
+    assert(l2_strength == 0.0)
     
     if opt == "Adam":
         optimizer = torch.optim.Adam(nfm.parameters(), lr=learning_rate, weight_decay=l2_strength)
@@ -430,6 +431,13 @@ def train(nfm, max_iter, anneal_iter = None, show_iter = None, learning_rate = N
         
         # print("num_samples_after_filtering = ", num_samples_after_filtering)
 
+        if analyzeGrads:
+            assert(not record_stats)
+            all_invalid_values, all_grads_norm = analysis.saveAllGradsL2Norm(nfm, loss)
+            commons.saveStatistics(all_invalid_values, "all_invalid_values_stats_new2")
+            commons.saveStatistics(all_grads_norm, "all_grads_norm_stats_new2")
+            return None, None
+        
         loss = torch.mean(loss)
         true_loss = torch.mean(true_loss)
         
@@ -464,7 +472,7 @@ def train(nfm, max_iter, anneal_iter = None, show_iter = None, learning_rate = N
     if record_stats:
         commons.saveStatistics(numpy.asarray([nr_optimization_steps]), "optSteps")
 
-    if divergence == "reverse_kld_ws_debug":
+    if record_stats and divergence == "reverse_kld_ws_debug":
         commons.saveStatistics(all_stat_z, "layer_z_stats")
         print("** SAVED layer_z_stats **")
     

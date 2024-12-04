@@ -2,6 +2,7 @@
 import torch
 import commons
 import numpy
+from tqdm import tqdm
 
 START_ANALYSIS_ID = 14000
 END_ANALYSIS_ID = 16000
@@ -81,7 +82,7 @@ def showQuantiles(subplot, all_stat_over_time, start_id, end_id, quantiles):
 
     return
 
-def showLayerValues(subplot, all_stat_over_time, start_id, end_id, layer_ids, y_limits = None):
+def showLayerValues(subplot, all_stat_over_time, start_id, end_id, layer_ids, y_limits = None, colors = ["red"], axis_font_size = 15):
     x_values = numpy.arange(start_id, end_id)
 
     assert(len(layer_ids) <= 3)
@@ -93,13 +94,16 @@ def showLayerValues(subplot, all_stat_over_time, start_id, end_id, layer_ids, y_
         if y_limits is not None:
             subplot.set_ylim(y_limits)
 
-    STANDARD_FONT_SIZE = 15
+    # STANDARD_FONT_SIZE = 15
 
-    for tick in subplot.xaxis.get_major_ticks():
-        tick.label.set_fontsize(fontsize=STANDARD_FONT_SIZE) 
+    # for tick in subplot.xaxis.get_major_ticks():
+    #     tick.label.set_fontsize(fontsize=STANDARD_FONT_SIZE) 
     
-    for tick in subplot.yaxis.get_major_ticks():
-        tick.label.set_fontsize(fontsize=STANDARD_FONT_SIZE) 
+    # for tick in subplot.yaxis.get_major_ticks():
+    #     tick.label.set_fontsize(fontsize=STANDARD_FONT_SIZE) 
+
+    subplot.xaxis.set_tick_params(labelsize=axis_font_size)
+    subplot.yaxis.set_tick_params(labelsize=axis_font_size)
 
     # subplot.set_ylabel("negative ELBO", fontsize = STANDARD_FONT_SIZE)
     # current_sub_plot.set_xlabel("iterations", fontsize = STANDARD_FONT_SIZE)
@@ -172,6 +176,45 @@ def saveAllsGrads(all_time_grads, nfm, loss):
     
     commons.saveStatistics(all_time_grads, "all_grads")
     return 
+
+
+def get_params_with_require_grad(nfm):
+    all_param = []
+
+    for param in nfm.parameters():
+        if param.requires_grad:
+            all_param.append(param)
+
+    return all_param
+
+
+def saveAllGradsL2Norm(nfm, loss):
+
+    all_grads_norm = numpy.zeros(loss.shape[0])
+    all_invalid_values = numpy.zeros(loss.shape[0])
+    
+    for i in tqdm(range(loss.shape[0])):
+        grads = torch.autograd.grad(loss[i], get_params_with_require_grad(nfm), retain_graph = True)
+        grads_one_vec = getVec(grads)
+        grads_one_vec = grads_one_vec.cpu().numpy()
+        
+        nr_invalid_values = numpy.sum(numpy.logical_or(numpy.isnan(grads_one_vec), numpy.isinf(grads_one_vec)))
+
+        all_invalid_values[i] = (nr_invalid_values / grads_one_vec.shape[0]) * 100
+        
+        # print("all_invalid_values[i] = ", (all_invalid_values[i] / grads_one_vec.shape[0]) * 100)
+        # assert(False)
+        # all_grads_norm[i] = grads_one_vec[max_id]
+
+        all_grads_norm[i] = numpy.nanmax(numpy.abs(grads_one_vec))
+
+        # remove nan-values
+        # grads_one_vec = grads_one_vec[~ numpy.isnan(grads_one_vec)]
+        # all_grads_norm_without_nan[i] = numpy.linalg.norm(grads_one_vec)
+
+    print("nr all_invalid_values = ", numpy.mean(all_invalid_values))
+
+    return all_invalid_values, all_grads_norm
 
 
 if __name__ == "__main__":

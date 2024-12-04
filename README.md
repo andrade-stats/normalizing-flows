@@ -1,12 +1,12 @@
 
 # Stable Training of Normalizing Flows for High-dimensional Variational Inference
 
-Implementation of all normalizing flow experiments described in [Stable Training of Normalizing Flows for High-dimensional Variational Inference](https://arxiv.org/pdf/2402.16408.pdf), 2024 (under review).
+Implementation of all normalizing flow experiments described in [Stabilizing Training of Affine Coupling Layers for High-dimensional Variational Inference](https://doi.org/10.1088/2632-2153/ad9a39), Machine Learning: Science and Technology, 2024.
 
 
 ## Requirements
 
-- Python >= 3.11.2
+- Python >= 3.9
 - PyTorch >= 2.0.1
 - normflows >= 1.7.2
 
@@ -14,21 +14,21 @@ Implementation of all normalizing flow experiments described in [Stable Training
 
 1. Create experiment environment using e.g. conda as follows
 ```bash
-conda create -n test python=3.11
-conda activate test
+conda create -n newExps python=3.9
+conda activate newExps
 ```
 
 2. Install basic packages:
 ```bash
-pip3 install -U numpy scikit-learn GPUtil normflows tqdm matplotlib
+pip3 install -U numpy scikit-learn GPUtil normflows tqdm matplotlib pandas
 ```
 
-3. Install PyTorch for your environment (see official webpage of [PyTorch](https://pytorch.org)).
-<!-- ```bash
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+<!--3. Install PyTorch for your environment (see official webpage of [PyTorch](https://pytorch.org)).
+ ```bash
+pip3 install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 ``` -->
 
-4. Create folders for output using
+3. Create folders for output using
 ```bash
 mkdir synthetic_data && mkdir all_results && mkdir all_trained_models && mkdir data && mkdir all_plots_final
 ```
@@ -91,3 +91,5 @@ Example (3): Training standard method on ConjugateLinearRegression with 1000 dim
 ```bash
 python run_experiments.py --target=ConjugateLinearRegression --d=1000 --flow-type=RealNVP_small --method=standard
 ``` 
+
+
