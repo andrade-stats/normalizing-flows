@@ -3,6 +3,9 @@
 
 Implementation of all normalizing flow experiments described in [Stabilizing Training of Affine Coupling Layers for High-dimensional Variational Inference](https://doi.org/10.1088/2632-2153/ad9a39), Machine Learning: Science and Technology, 2024.
 
+The code here is mostly for reproducability of the experiments conducted in [Stabilizing Training of Affine Coupling Layers for High-dimensional Variational Inference](https://doi.org/10.1088/2632-2153/ad9a39).
+If you are interested in variational inference with normalizing flows for your own research, consider the examples and documentation here:
+[Tutorial for High-dimensional Variational Inference](https://github.com/andrade-stats/normalizing-flows-vi)
 
 ## Requirements
 
